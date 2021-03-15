@@ -16,6 +16,13 @@ class Company(models.Model):
     SKU = models.CharField(max_length=150, null=False)
     address = models.OneToOneField('Address', on_delete=models.CASCADE)
 
+    @classmethod
+    def _generate_SKU(cls):
+        SKU = get_random_string(length=150)
+        if cls.objects.filter(SKU=SKU):
+            SKU = get_random_string(length=150)
+        return SKU
+
 
 class Customer(models.Model):
     name = models.CharField(max_length=100, null=False)
