@@ -1,9 +1,11 @@
 from django.db import models
+from django.utils.crypto import get_random_string
 
 
 class Address(models.Model):
     country = models.CharField(max_length=50, null=False)
     city = models.CharField(max_length=100, null=False)
+    postal_code = models.CharField(max_length=6, null=False)
     street = models.CharField(max_length=100, null=False)
     building_number = models.PositiveSmallIntegerField()
     apartment_number = models.PositiveSmallIntegerField()
@@ -47,9 +49,44 @@ class Item(models.Model):
     title = models.CharField(max_length=50, null=False)
     name = models.CharField(max_length=50, null=False)
     price = models.PositiveSmallIntegerField()
-    category = models.PositiveSmallIntegerField(choices=CATEGORIES, default=2)
+    category = models.PositiveSmallIntegerField(choices=CATEGORIES, null=True)
     earnings = models.PositiveSmallIntegerField()
-    subscription_term = models.PositiveSmallIntegerField(choices=SUBSCRIPTION_TERMS, default=None)
+    subscription_term = models.PositiveSmallIntegerField(choices=SUBSCRIPTION_TERMS, default=None, null=True)
+    vat = models.PositiveSmallIntegerField(default=0.23)
+
+    @classmethod
+    def _validate_data(cls, title, name, price, earnings, category, subscription_term, vat):
+        messages = []
+        if not isinstance(title, str) or len(str(title)) > 50:
+            messages.append('Title error')
+        if not isinstance(name, str) or len(str(name)) > 50:
+            messages.append('Name error')
+        if not isinstance(price, (int, float)) or isinstance(price, bool) or price <= 0:
+            messages.append('Price error')
+        if not(isinstance(earnings, (int, float))) or isinstance(earnings, bool) or earnings <= 0 or earnings > price:
+            messages.append('Earnings error')
+        if not isinstance(category, (int, type(None))) or isinstance(category, bool):
+            messages.append('Category error')
+        if not isinstance(subscription_term, (int, type(None))) or isinstance(subscription_term, bool):
+            messages.append('Subscription term error')
+        if not isinstance(vat, (int, float)) or isinstance(vat, bool):
+            messages.append('Vat error')
+        if messages:
+            raise TypeError(messages)
+        else:
+            return True
+
+    @classmethod
+    def create(cls, title: str, name: str, price: int, earnings: int, category: int = None,
+               subscription_term: int = None, vat: int = 0.23):
+        cls._validate_data(title, name, price, earnings, category, subscription_term, vat)
+        asin = get_random_string(length=10)
+        if cls.objects.filter(ASIN=asin):
+            asin = get_random_string(length=10)
+        instance = cls(ASIN=asin, title=title, name=name, price=price, earnings=earnings, category=category,
+                       subscription_term=subscription_term, vat=vat)
+        instance.save()
+        return instance
 
 
 class SoldItem(models.Model):
