@@ -13,7 +13,7 @@ class Address(models.Model):
 
 class Company(models.Model):
     name = models.CharField(max_length=100, null=False)
-    SKU = models.CharField(max_length=100, null=False)
+    SKU = models.CharField(max_length=150, null=False)
     address = models.OneToOneField('Address', on_delete=models.CASCADE)
 
 
@@ -77,12 +77,17 @@ class Item(models.Model):
             return True
 
     @classmethod
-    def create(cls, title: str, name: str, price: int, earnings: int, category: int = None,
-               subscription_term: int = None, vat: int = 0.23):
-        cls._validate_data(title, name, price, earnings, category, subscription_term, vat)
+    def _generate_asin(cls):
         asin = get_random_string(length=10)
         if cls.objects.filter(ASIN=asin):
             asin = get_random_string(length=10)
+        return asin
+
+    @classmethod
+    def create(cls, title: str, name: str, price: int, earnings: int, category: int = None,
+               subscription_term: int = None, vat: int = 0.23):
+        cls._validate_data(title, name, price, earnings, category, subscription_term, vat)
+        asin = cls._generate_asin()
         instance = cls(ASIN=asin, title=title, name=name, price=price, earnings=earnings, category=category,
                        subscription_term=subscription_term, vat=vat)
         instance.save()
