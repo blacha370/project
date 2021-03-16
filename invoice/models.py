@@ -105,6 +105,13 @@ class Customer(models.Model):
         else:
             return True
 
+    @classmethod
+    def _generate_app_id(cls):
+        app_id = get_random_string(length=100)
+        if cls.objects.filter(app_id=app_id):
+            app_id = get_random_string(length=100)
+        return app_id
+
 
 class Marketplace(models.Model):
     name = models.CharField(max_length=50, null=False, default='amazon.com')
