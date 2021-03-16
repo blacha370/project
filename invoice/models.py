@@ -55,9 +55,10 @@ class Address(models.Model):
 
 
 class Company(models.Model):
-    name = models.CharField(max_length=100, null=False)
-    SKU = models.CharField(max_length=150, null=False)
-    address = models.OneToOneField('Address', on_delete=models.CASCADE)
+    name = models.CharField(max_length=100, null=False, unique=True)
+    SKU = models.CharField(max_length=150, null=False, unique=True)
+    address = models.OneToOneField('Address', on_delete=models.CASCADE, unique=True)
+
 
     @classmethod
     def _generate_SKU(cls):
