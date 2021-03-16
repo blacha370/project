@@ -91,7 +91,7 @@ class Company(models.Model):
 class Customer(models.Model):
     name = models.CharField(max_length=100, null=False)
     address = models.ForeignKey('Address', on_delete=models.CASCADE)
-    app_id = models.CharField(max_length=100)
+    app_id = models.CharField(max_length=100, unique=True)
 
 
 class Marketplace(models.Model):
