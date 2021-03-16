@@ -34,6 +34,16 @@ class Address(models.Model):
         else:
             return True
 
+    @classmethod
+    def create(cls, country: str, city: str, postal_code: str, street: str, building_number: int,
+               apartment_number: int = None):
+        cls._validate_data(country=country, city=city, postal_code=postal_code, street=street,
+                           building_number=building_number, apartment_number=apartment_number)
+        instance = cls(country=country, city=city, postal_code=postal_code, street=street,
+                       building_number=building_number, apartment_number=apartment_number)
+        instance.save()
+        return instance
+
 
 class Company(models.Model):
     name = models.CharField(max_length=100, null=False)
