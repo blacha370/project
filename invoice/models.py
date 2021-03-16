@@ -334,6 +334,27 @@ class Receipt(models.Model):
     receipt_id = models.CharField(max_length=20, unique=True)
     time = models.DateTimeField(auto_now_add=True)
 
+    @classmethod
+    def _validate_data(cls, transaction):
+        if not isinstance(transaction, Transaction):
+            raise TypeError('Transaction error')
+        return True
+
+    @classmethod
+    def _generate_receipt_id(cls):
+        receipt_id = get_random_string(length=20)
+        if cls.objects.filter(receipt_id=receipt_id):
+            receipt_id = get_random_string(length=20)
+        return receipt_id
+
+    @classmethod
+    def create(cls, transaction: Transaction):
+        cls._validate_data(transaction=transaction)
+        receipt_id = cls._generate_receipt_id()
+        instance = cls(transaction=transaction, receipt_id=receipt_id)
+        instance.save()
+        return instance
+
 
 class Invoice(models.Model):
     receipt = models.OneToOneField('Receipt', on_delete=models.CASCADE)
