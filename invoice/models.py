@@ -232,6 +232,22 @@ class SoldItem(models.Model):
         instance.save()
         return instance
 
+    @property
+    def net_value(self):
+        return self.item.price * self.units
+
+    @property
+    def vat_value(self):
+        return {'name': self.item.vat.tax_name, 'value': self.item.price * self.item.vat.tax_value * self.units}
+
+    @property
+    def total_value(self):
+        return self.net_value + self.vat_value
+
+    @property
+    def total_earnings(self):
+        return self.item.earnings * self.units
+
 
 class Transaction(models.Model):
     vendor = models.ForeignKey('Company', on_delete=models.CASCADE, null=False)
