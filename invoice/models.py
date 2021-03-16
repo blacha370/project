@@ -383,6 +383,10 @@ class Invoice(models.Model):
         instance.save()
         return instance
 
+    def end_invoice(self):
+        self.time = timezone.now()
+        self.ended = True
+        self.save()
 
 
 class AdvanceInvoice(models.Model):
