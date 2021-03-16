@@ -392,5 +392,41 @@ class Invoice(models.Model):
 class AdvanceInvoice(models.Model):
     invoice = models.ForeignKey('Invoice', on_delete=models.CASCADE)
     payment = models.SmallIntegerField()
-    advance_invoice_id = models.CharField(max_length=20, unique=True)
+    advance_invoice_id = models.CharField(max_length=23, unique=True)
     time = models.DateTimeField(auto_now_add=True)
+
+    @classmethod
+    def _validate_data(cls, invoice, payment):
+        messages = []
+        if not isinstance(invoice, Invoice) or invoice.ended:
+            messages.append('Invoice error')
+        if not isinstance(payment, (int, float)) or isinstance(payment, bool) or payment <= 0:
+            messages.append('Payment error')
+        amount = 0
+        for advance_invoice in cls.objects.filter(invoice=invoice):
+            amount += advance_invoice.payment
+        if amount >= invoice.receipt.transaction.total_value:
+            messages.append('Value error')
+        if messages:
+            raise TypeError(messages)
+        else:
+            return True
+
+    @classmethod
+    def _generate_invoice_id(cls, invoice_id):
+        advance_invoice_id = invoice_id + '-01'
+        if cls.objects.get(advance_invoice_id=advance_invoice_id):
+            id_number = int(advance_invoice_id[-2:])
+            id_number += 1
+            if id_number < 10:
+                advance_invoice_id = advance_invoice_id[:-2] + '0' + str(id_number)
+            else:
+                advance_invoice_id = advance_invoice_id[:-2] + str(id_number)
+        return advance_invoice_id
+
+    @classmethod
+    def create(cls, invoice: Invoice, payment: (int, float)):
+        cls._validate_data(invoice=invoice, payment=payment)
+        advance_invoice_id = cls._generate_invoice_id(invoice.invoice_id)
+        instance = cls(invoice=invoice, payment=payment, advance_invoice_id=advance_invoice_id)
+        return instance
