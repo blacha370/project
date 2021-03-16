@@ -283,6 +283,19 @@ class Transaction(models.Model):
         else:
             return True
 
+    @classmethod
+    def create(cls, vendor: Company, customer: Customer, items: set, country_code: str, refund: bool = False,
+               adjustment: bool = False):
+        cls._validate_data(vendor=vendor, customer=customer, items=items, country_code=country_code, refund=refund,
+                           adjustment=adjustment)
+        instance = cls(vendor=vendor, customer=customer, country_code=country_code, refund=refund,
+                       adjustment=adjustment)
+        instance.save()
+        for item in items:
+            sold_item = SoldItem.objects.get(pk=item)
+            instance.items.add(sold_item)
+        return instance
+
 
 class Receipt(models.Model):
     transaction = models.OneToOneField('Transaction', on_delete=models.CASCADE)
