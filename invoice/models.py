@@ -93,6 +93,18 @@ class Customer(models.Model):
     address = models.ForeignKey('Address', on_delete=models.CASCADE)
     app_id = models.CharField(max_length=100, unique=True)
 
+    @classmethod
+    def _validate_data(cls, name, address):
+        messages = []
+        if not isinstance(name, str) or len(name) > cls.name.field.max_length or name.replace(' ', '') == '':
+            messages.append('Name error')
+        if not isinstance(address, Address):
+            messages.append('Address error')
+        if messages:
+            raise TypeError(messages)
+        else:
+            return True
+
 
 class Marketplace(models.Model):
     name = models.CharField(max_length=50, null=False, default='amazon.com')
