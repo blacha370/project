@@ -59,6 +59,18 @@ class Company(models.Model):
     SKU = models.CharField(max_length=150, null=False, unique=True)
     address = models.OneToOneField('Address', on_delete=models.CASCADE, unique=True)
 
+    @classmethod
+    def _validate_data(cls, name, address):
+        messages = []
+        if not isinstance(name, str) or len(name) > cls.name.field.max_length or cls.objects.filter(name=name) or \
+                name.replace(' ', '') == '':
+            messages.append('Name error')
+        if not isinstance(address, Address) or cls.objects.filter(address=address):
+            messages.append('Address error')
+        if messages:
+            raise TypeError(messages)
+        else:
+            return True
 
     @classmethod
     def _generate_SKU(cls):
