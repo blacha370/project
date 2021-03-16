@@ -225,6 +225,13 @@ class SoldItem(models.Model):
         else:
             return True
 
+    @classmethod
+    def create(cls, item: Item, units: int, trial: bool = None):
+        cls._validate_data(item, units, trial)
+        instance = cls(item=item, units=units, trial=trial)
+        instance.save()
+        return instance
+
 
 class Transaction(models.Model):
     vendor = models.ForeignKey('Company', on_delete=models.CASCADE, null=False)
