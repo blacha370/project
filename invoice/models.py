@@ -112,6 +112,14 @@ class Customer(models.Model):
             app_id = get_random_string(length=100)
         return app_id
 
+    @classmethod
+    def create(cls, name: str, address: Address):
+        cls._validate_data(name=name, address=address)
+        app_id = cls._generate_app_id()
+        instance = cls(name=name, address=address, app_id=app_id)
+        instance.save()
+        return instance
+
 
 class Marketplace(models.Model):
     name = models.CharField(max_length=50, null=False, default='amazon.com')
