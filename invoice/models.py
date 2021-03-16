@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils.crypto import get_random_string
+from django.utils import timezone
 
 
 class Address(models.Model):
@@ -8,7 +9,30 @@ class Address(models.Model):
     postal_code = models.CharField(max_length=6, null=False)
     street = models.CharField(max_length=100, null=False)
     building_number = models.PositiveSmallIntegerField()
-    apartment_number = models.PositiveSmallIntegerField()
+    apartment_number = models.PositiveSmallIntegerField(null=True, default=None)
+
+    @classmethod
+    def _validate_data(cls, country, city, postal_code, street, building_number, apartment_number):
+        messages = []
+        if not isinstance(country, str) or len(country) > cls.country.field.max_length or \
+                country.replace(' ', '') == '':
+            messages.append('Country error')
+        if not isinstance(city, str) or len(city) > cls.city.field.max_length or city.replace(' ', '') == '':
+            messages.append('City error')
+        if not isinstance(postal_code, str) or len(postal_code) > cls.postal_code.field.max_length or \
+                postal_code.replace(' ', '') == '':
+            messages.append('Postal code error')
+        if not isinstance(street, str) or len(street) > cls.street.field.max_length or street.replace(' ', '') == '':
+            messages.append('Street error')
+        if not isinstance(building_number, int) or isinstance(building_number, bool) or int(building_number) <= 0:
+            messages.append('Building number error')
+        if apartment_number is not None:
+            if not isinstance(apartment_number, int) or isinstance(apartment_number, bool) or apartment_number <= 0:
+                messages.append('Apartment number error')
+        if messages:
+            raise TypeError
+        else:
+            return True
 
 
 class Company(models.Model):
