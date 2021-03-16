@@ -126,6 +126,20 @@ class Marketplace(models.Model):
     currency = models.CharField(max_length=3, null=False, default='USD')
 
 
+class Tax(models.Model):
+    tax_value = models.DecimalField(unique=True, decimal_places=2, max_digits=3)
+    tax_name = models.CharField(max_length=8, unique=True)
+
+    @classmethod
+    def create(cls, tax_value: float):
+        if not isinstance(tax_value, float) or tax_value < 0 or tax_value >= 1:
+            raise TypeError('Tax value error: tax_value should be float greater on equal to 0 and lower than 1')
+        tax_name = 'Vat_' + '{}'.format(round(tax_value, 2))
+        instance = cls(tax_value=tax_value, tax_name=tax_name)
+        instance.save()
+        return instance
+
+
 class Item(models.Model):
     CATEGORIES = (
         (1, 'subscription'),
