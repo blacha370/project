@@ -360,7 +360,29 @@ class Invoice(models.Model):
     receipt = models.OneToOneField('Receipt', on_delete=models.CASCADE)
     invoice_id = models.CharField(max_length=20, unique=True)
     ended = models.BooleanField(default=False)
-    time = models.DateTimeField(default=None)
+    time = models.DateTimeField(default=None, null=True)
+
+    @classmethod
+    def _validate_data(cls, receipt):
+        if isinstance(receipt, Receipt):
+            raise TypeError('Receipt error')
+        return True
+
+    @classmethod
+    def _generate_invoice_id(cls):
+        invoice_id = get_random_string(length=20)
+        if cls.objects.filter(invoice_id=invoice_id):
+            invoice_id = get_random_string(length=20)
+        return invoice_id
+
+    @classmethod
+    def create(cls, receipt: Receipt):
+        cls._validate_data(receipt=receipt)
+        invoice_id = cls._generate_invoice_id()
+        instance = cls(receipt=receipt, invoice_id=invoice_id)
+        instance.save()
+        return instance
+
 
 
 class AdvanceInvoice(models.Model):
