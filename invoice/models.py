@@ -79,6 +79,14 @@ class Company(models.Model):
             SKU = get_random_string(length=150)
         return SKU
 
+    @classmethod
+    def create(cls, name, address):
+        cls._validate_data(name=name, address=address)
+        SKU = cls._generate_SKU()
+        instance = cls(name=name, address=address, SKU=SKU)
+        instance.save()
+        return instance
+
 
 class Customer(models.Model):
     name = models.CharField(max_length=100, null=False)
