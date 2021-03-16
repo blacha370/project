@@ -44,6 +44,15 @@ class Address(models.Model):
         instance.save()
         return instance
 
+    def __str__(self):
+        first_line = self.street + ' ' + str(self.building_number)
+        if self.apartment_number:
+            first_line += ' ' + str(self.apartment_number)
+        first_line += '\n'
+        second_line = self.postal_code + ' ' + self.city + '\n'
+        third_line = self.country
+        return first_line + second_line + third_line
+
 
 class Company(models.Model):
     name = models.CharField(max_length=100, null=False)
