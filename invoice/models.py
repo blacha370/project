@@ -211,6 +211,20 @@ class SoldItem(models.Model):
     units = models.PositiveSmallIntegerField()
     trial = models.BooleanField(null=True)
 
+    @classmethod
+    def _validate_data(cls, item, units, trial):
+        messages = []
+        if not isinstance(item, Item):
+            messages.append('Item error')
+        if not isinstance(units, int) or isinstance(units, bool):
+            messages.append('Units error')
+        if not isinstance(trial, bool) and trial is not None:
+            messages.append('Trial error')
+        if messages:
+            raise TypeError(messages)
+        else:
+            return True
+
 
 class Transaction(models.Model):
     vendor = models.ForeignKey('Company', on_delete=models.CASCADE, null=False)
