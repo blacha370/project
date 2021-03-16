@@ -296,6 +296,38 @@ class Transaction(models.Model):
             instance.items.add(sold_item)
         return instance
 
+    @property
+    def net_value(self):
+        net_value = 0
+        for item in self.items.all():
+            net_value += item.net_value
+        return net_value
+
+    @property
+    def tax_values(self):
+        values = {tax.tax_name: 0 for tax in Tax.objects.all()}
+        for item in self.items.all():
+            values[item.vat_value['name']] += item.vat_value['value']
+        return values
+
+    @property
+    def tax_value(self):
+        tax_value = 0
+        for _, value in self.tax_values.items():
+            tax_value += value
+        return tax_value
+
+    @property
+    def total_value(self):
+        return self.net_value + self.tax_value
+
+    @property
+    def total_earnings(self):
+        total_earnings = 0
+        for item in self.items.all():
+            total_earnings += item.earnings
+        return total_earnings
+
 
 class Receipt(models.Model):
     transaction = models.OneToOneField('Transaction', on_delete=models.CASCADE)
