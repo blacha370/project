@@ -245,19 +245,20 @@ class SoldItem(models.Model):
 
     @property
     def net_value(self):
-        return self.item.price * self.units
+        return round(self.item.price * self.units, 2)
 
     @property
     def vat_value(self):
-        return {'name': self.item.vat.tax_name, 'value': self.item.price * self.item.vat.tax_value * self.units}
+        return {'name': self.item.vat.tax_name, 'value': round(self.item.price * self.item.vat.tax_value * self.units,
+                                                               2)}
 
     @property
     def total_value(self):
-        return self.net_value + self.vat_value
+        return round(self.net_value + self.vat_value['value'], 2)
 
     @property
     def total_earnings(self):
-        return self.item.earnings * self.units
+        return round(self.item.earnings * self.units, 2)
 
 
 class Transaction(models.Model):
