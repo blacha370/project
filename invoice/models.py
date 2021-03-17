@@ -272,41 +272,34 @@ class Transaction(models.Model):
     time = models.DateTimeField(auto_now_add=True)
 
     @classmethod
-    def _validate_data(cls, vendor, customer, items, country_code, refund, adjustment):
+    def _validate_data(cls, vendor, customer, marketplace, country_code, refund, adjustment):
         messages = []
         if not isinstance(vendor, Company):
             messages.append('Vendor error')
         if not isinstance(customer, Customer):
             messages.append('Customer error')
-        if not isinstance(country_code, str) or len(country_code) > 2 or len(country_code) <= 0:
+        if not isinstance(marketplace, Marketplace):
+            messages.append('Marketplace error')
+        if not isinstance(country_code, str) or len(country_code) > 2 or len(country_code) == 0 or \
+                country_code.replace(' ', '') == '':
             messages.append('Country code error')
         if not isinstance(refund, bool):
             messages.append('Refund error')
         if not isinstance(adjustment, bool):
             messages.append('Adjustment error')
-        if not isinstance(items, (list, set, tuple)) or not len(items):
-            messages.append('Items error')
-        for item in items:
-            try:
-                SoldItem.objects.get(pk=item)
-            except SoldItem.doesNotExist:
-                messages.append('Item {} does not exist'.format('item'))
         if messages:
             raise TypeError(messages)
         else:
             return True
 
     @classmethod
-    def create(cls, vendor: Company, customer: Customer, items: set, country_code: str, refund: bool = False,
-               adjustment: bool = False):
-        cls._validate_data(vendor=vendor, customer=customer, items=items, country_code=country_code, refund=refund,
-                           adjustment=adjustment)
-        instance = cls(vendor=vendor, customer=customer, country_code=country_code, refund=refund,
-                       adjustment=adjustment)
+    def create(cls, vendor: Company, customer: Customer, marketplace: Marketplace, country_code: str,
+               refund: bool = False, adjustment: bool = False):
+        cls._validate_data(vendor=vendor, customer=customer, marketplace=marketplace, country_code=country_code,
+                           refund=refund, adjustment=adjustment)
+        instance = cls(vendor=vendor, customer=customer, marketplace=marketplace, country_code=country_code,
+                       refund=refund, adjustment=adjustment)
         instance.save()
-        for item in items:
-            sold_item = SoldItem.objects.get(pk=item)
-            instance.items.add(sold_item)
         return instance
 
     @property
