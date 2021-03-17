@@ -331,7 +331,7 @@ class Transaction(models.Model):
     def total_earnings(self):
         total_earnings = 0
         for item in self.items.all():
-            total_earnings += item.earnings
+            total_earnings += item.total_earnings
         return total_earnings
 
 
