@@ -95,3 +95,18 @@ class AddCustomer(APIView):
         serializer = CustomerSerializer(customer, many=False, context={'request': request})
         return Response({'status': 'OK', 'customer': serializer.data})
 
+
+class CreateTax(APIView):
+    field = 'tax_value'
+
+    def post(self, request):
+        try:
+            value = request.data[self.field]
+            tax = Tax.create(tax_value=value)
+            serializer = TaxSerializer(tax, many=False, context={'request': request})
+            return Response({'status': 'OK', 'tax': serializer.data})
+        except KeyError:
+            return Response({'status': 'ERROR', 'message': 'missing argument: tax_value'})
+        except TypeError as e:
+            return Response({'status': 'ERROR', 'message': str(e)})
+
