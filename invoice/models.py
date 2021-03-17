@@ -223,7 +223,7 @@ class SoldItem(models.Model):
         messages = []
         if not isinstance(item, Item):
             messages.append('Item error')
-        if not isinstance(units, int) or isinstance(units, bool):
+        if not isinstance(units, int) or isinstance(units, bool) or units <= 0:
             messages.append('Units error')
         if not isinstance(trial, bool) and trial is not None:
             messages.append('Trial error')
@@ -235,6 +235,10 @@ class SoldItem(models.Model):
     @classmethod
     def create(cls, item: Item, units: int, trial: bool = None):
         cls._validate_data(item, units, trial)
+        if item.category != 1:
+            trial = None
+        elif trial is None:
+            trial = False
         instance = cls(item=item, units=units, trial=trial)
         instance.save()
         return instance
