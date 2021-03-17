@@ -73,3 +73,25 @@ class AdvanceInvoiceViewSet(ModelViewSet):
     serializer_class = AdvanceInvoiceSerializer
     http_method_names = ['get']
 
+
+class AddCustomer(APIView):
+    address_keys = ['country', 'city', 'postal_code', 'street', 'building_number', 'apartment_number']
+    customer_keys = ['name']
+
+    def post(self, request):
+        address_dict = {key: value for key, value in request.data.items() if key in self.address_keys}
+        try:
+            address = Address.create(**address_dict)
+        except TypeError as e:
+            print(e)
+            return Response({'status': 'ERROR', 'message': str(e).replace('create() ', '')})
+        customer_dict = {key: value for key, value in request.data.items() if key in self.customer_keys}
+        customer_dict['address'] = address
+        try:
+            customer = Customer.create(**customer_dict)
+        except TypeError as e:
+            address.delete()
+            return Response({'status': 'ERROR', 'message': str(e).replace('create() ', '')})
+        serializer = CustomerSerializer(customer, many=False, context={'request': request})
+        return Response({'status': 'OK', 'customer': serializer.data})
+
