@@ -371,7 +371,7 @@ class Invoice(models.Model):
 
     @classmethod
     def _validate_data(cls, receipt):
-        if isinstance(receipt, Receipt):
+        if not isinstance(receipt, Receipt) or cls.objects.filter(receipt=receipt):
             raise TypeError('Receipt error')
         return True
 
