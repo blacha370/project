@@ -405,15 +405,21 @@ class AdvanceInvoice(models.Model):
     @classmethod
     def _validate_data(cls, invoice, payment):
         messages = []
+        amount = 0
         if not isinstance(invoice, Invoice) or invoice.ended:
             messages.append('Invoice error')
+        else:
+            for advance_invoice in cls.objects.filter(invoice=invoice):
+                amount += advance_invoice.payment
+
+            if amount + payment > invoice.receipt.transaction.total_value:
+                messages.append('Value error')
+            elif amount + payment == invoice.receipt.transaction.total_value:
+                invoice.end_invoice()
+
         if not isinstance(payment, (int, float)) or isinstance(payment, bool) or payment <= 0:
             messages.append('Payment error')
-        amount = 0
-        for advance_invoice in cls.objects.filter(invoice=invoice):
-            amount += advance_invoice.payment
-        if amount >= invoice.receipt.transaction.total_value:
-            messages.append('Value error')
+
         if messages:
             raise TypeError(messages)
         else:
@@ -422,7 +428,7 @@ class AdvanceInvoice(models.Model):
     @classmethod
     def _generate_invoice_id(cls, invoice_id):
         advance_invoice_id = invoice_id + '-01'
-        if cls.objects.get(advance_invoice_id=advance_invoice_id):
+        while cls.objects.filter(advance_invoice_id=advance_invoice_id):
             id_number = int(advance_invoice_id[-2:])
             id_number += 1
             if id_number < 10:
@@ -436,4 +442,5 @@ class AdvanceInvoice(models.Model):
         cls._validate_data(invoice=invoice, payment=payment)
         advance_invoice_id = cls._generate_invoice_id(invoice.invoice_id)
         instance = cls(invoice=invoice, payment=payment, advance_invoice_id=advance_invoice_id)
+        instance.save()
         return instance
