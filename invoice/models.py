@@ -342,7 +342,8 @@ class Receipt(models.Model):
 
     @classmethod
     def _validate_data(cls, transaction):
-        if not isinstance(transaction, Transaction):
+        if not isinstance(transaction, Transaction) or not transaction.items.count() or \
+                cls.objects.filter(transaction=transaction):
             raise TypeError('Transaction error')
         return True
 
