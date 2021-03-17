@@ -169,9 +169,9 @@ class Item(models.Model):
     @classmethod
     def _validate_data(cls, title, name, price, earnings, category, subscription_term, vat):
         messages = []
-        if not isinstance(title, str) or len(title) > cls.title.field.max_length:
+        if not isinstance(title, str) or len(title) > cls.title.field.max_length or title.replace(' ', '') == '':
             messages.append('Title error')
-        if not isinstance(name, str) or len(name) > cls.name.field.max_length:
+        if not isinstance(name, str) or len(name) > cls.name.field.max_length or name.replace(' ', '') == '':
             messages.append('Name error')
         if not isinstance(price, (int, float)) or isinstance(price, bool) or price <= 0:
             messages.append('Price error')
@@ -196,10 +196,17 @@ class Item(models.Model):
         return asin
 
     @classmethod
-    def create(cls, title: str, name: str, price: int, earnings: int, vat: Tax, category: int = None,
+    def create(cls, title: str, name: str, price: (int, float), earnings: (int, float), vat: Tax, category: int = None,
                subscription_term: int = None):
         cls._validate_data(title, name, price, earnings, category, subscription_term, vat)
         asin = cls._generate_asin()
+        if category is not None and (category <= 0 or category > len(cls.CATEGORIES)):
+            category = None
+            subscription_term = None
+        elif category != 1:
+            subscription_term = None
+        elif subscription_term is None:
+            subscription_term = 1
         instance = cls(ASIN=asin, title=title, name=name, price=price, earnings=earnings, category=category,
                        subscription_term=subscription_term, vat=vat)
         instance.save()
