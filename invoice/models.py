@@ -160,9 +160,9 @@ class Item(models.Model):
     ASIN = models.CharField(max_length=10, null=False)
     title = models.CharField(max_length=50, null=False)
     name = models.CharField(max_length=50, null=False)
-    price = models.PositiveSmallIntegerField()
+    price = models.DecimalField(decimal_places=2, max_digits=7)
     category = models.PositiveSmallIntegerField(choices=CATEGORIES, null=True)
-    earnings = models.PositiveSmallIntegerField()
+    earnings = models.DecimalField(decimal_places=2, max_digits=7)
     subscription_term = models.PositiveSmallIntegerField(choices=SUBSCRIPTION_TERMS, default=None, null=True)
     vat = models.ForeignKey('Tax', on_delete=models.CASCADE)
 
