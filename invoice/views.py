@@ -128,3 +128,37 @@ class CreateItem(APIView):
         except TypeError as e:
             return Response({'status': 'ERROR', 'message': str(e).replace('create() ', '')})
 
+
+class CreateTransaction(APIView):
+    transaction_keys = ['SKU', 'app_id', 'marketplace_name', 'country_code', 'refund', 'adjustment']
+    items_key = 'items'
+
+    def post(self, request):
+        items = []
+        error_items = []
+        try:
+            for item in request.data['items']:
+                try:
+                    if item['count'] <= 0 or not isinstance(item['count'], int) or isinstance(item['count'], bool):
+                        error_items.append(item['ASIN'])
+                        continue
+                    items.append((Item.objects.get(ASIN=item['ASIN']), item['count']))
+                except Item.DoesNotExist:
+                    error_items.append(item['ASIN'])
+                except KeyError:
+                    return Response({'status': 'ERROR', 'message': 'item {} does not have count'.format(item['ASIN'])})
+        except KeyError:
+            return Response({'status': 'ERROR', 'message': 'missing argument: items'})
+        if error_items:
+            return Response({'status': 'ERROR', 'message': 'items error: {}'.format(', '.join(error_items))})
+
+        transaction_dict = {key: value for key, value in request.data.items() if key in self.transaction_keys}
+        try:
+            transaction = Transaction.create(**transaction_dict)
+            for item in items:
+                sold_item = SoldItem.create(item=item[0], units=item[1])
+                transaction.items.add(sold_item)
+            serializer = TransactionSerializer(transaction, many=False, context={'request': request})
+            return Response({'status': 'OK', 'transaction': serializer.data})
+        except TypeError as e:
+            return Response({'status': 'ERROR', 'message': str(e)})
