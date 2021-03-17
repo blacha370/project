@@ -252,6 +252,7 @@ class SoldItem(models.Model):
 class Transaction(models.Model):
     vendor = models.ForeignKey('Company', on_delete=models.CASCADE, null=False)
     customer = models.ForeignKey('Customer', on_delete=models.CASCADE, null=False)
+    marketplace = models.ForeignKey('Marketplace', on_delete=models.CASCADE, null=False)
     items = models.ManyToManyField('SoldItem')
     country_code = models.CharField(max_length=2, null=False)
     refund = models.BooleanField(default=False)
