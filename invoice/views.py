@@ -95,6 +95,18 @@ class AddCustomer(APIView):
         serializer = CustomerSerializer(customer, many=False, context={'request': request})
         return Response({'status': 'OK', 'customer': serializer.data})
 
+    @staticmethod
+    def check_if_customer_exists(address_dict, customer_dict):
+        try:
+            customers = Customer.objects.filter(name=customer_dict['name'])
+            addresses = Address.objects.filter(**address_dict)
+            for customer in customers:
+                if customer.address in addresses:
+                    return customer
+        except (TypeError, AssertionError, ValueError, KeyError):
+            return False
+        return False
+
 
 class CreateTax(APIView):
     field = 'tax_value'
