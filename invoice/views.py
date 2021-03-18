@@ -177,3 +177,18 @@ class CreateTransaction(APIView):
             return Response({'status': 'OK', 'transaction': serializer.data})
         except TypeError as e:
             return Response({'status': 'ERROR', 'message': str(e)})
+
+
+class CreateReceipt(APIView):
+    def post(self, request):
+        try:
+            transaction = Transaction.objects.get(pk=request.data['transaction_id'])
+            receipt = Receipt.create(transaction=transaction)
+            serializer = ReceiptSerializer(receipt, many=False, context={'request': request})
+            return Response({'status': 'OK', 'receipt': serializer.data})
+        except Transaction.DoesNotExist:
+            return Response({'status': 'ERROR', 'message': 'Transaction with provided id does not exist'})
+        except KeyError:
+            return Response({'status': 'Erorr', 'message': 'missing argument: transaction_id'})
+        except TypeError as e:
+            return Response({'status': 'ERROR', 'message': str(e).replace('create() ', '')})
