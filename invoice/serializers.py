@@ -73,8 +73,8 @@ class TransactionSerializer(HyperlinkedModelSerializer):
     class Meta:
         model = Transaction
         read_only = ['net_value', 'tax_values', 'tax_value', 'total_value', 'total_earnings']
-        fields = ['url', 'vendor', 'customer', 'marketplace', 'items', 'country_code', 'refund', 'adjustment', 'time',
-                  'net_value', 'tax_values', 'tax_value', 'total_value', 'total_earnings']
+        fields = ['url', 'vendor', 'customer', 'marketplace', 'transaction_id', 'items', 'country_code', 'refund',
+                  'adjustment', 'time', 'net_value', 'tax_values', 'tax_value', 'total_value', 'total_earnings']
 
 
 class ReceiptSerializer(HyperlinkedModelSerializer):

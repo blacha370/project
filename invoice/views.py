@@ -1,11 +1,14 @@
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.response import Response
+from django.http import HttpResponse
+from datetime import datetime
 from .models import (Address, Company, Customer, Marketplace, Tax, Item, SoldItem, Transaction, Receipt, Invoice,
                      AdvanceInvoice)
 from .serializers import (AddressSerializer, CompanySerializer, CustomerSerializer, MarketplaceSerializer,
                           TaxSerializer, ItemSerializer, SoldItemSerializer, TransactionSerializer, ReceiptSerializer,
                           InvoiceSerializer, AdvanceInvoiceSerializer)
+from .functions import generate_sales_report
 
 
 class AddressViewSet(ModelViewSet):
@@ -177,3 +180,90 @@ class CreateTransaction(APIView):
             return Response({'status': 'OK', 'transaction': serializer.data})
         except TypeError as e:
             return Response({'status': 'ERROR', 'message': str(e)})
+
+
+class CreateReceipt(APIView):
+    def post(self, request):
+        try:
+            transaction = Transaction.objects.get(pk=request.data['transaction_id'])
+            receipt = Receipt.create(transaction=transaction)
+            serializer = ReceiptSerializer(receipt, many=False, context={'request': request})
+            return Response({'status': 'OK', 'receipt': serializer.data})
+        except Transaction.DoesNotExist:
+            return Response({'status': 'ERROR', 'message': 'Transaction with provided id does not exist'})
+        except KeyError:
+            return Response({'status': 'Erorr', 'message': 'missing argument: transaction_id'})
+        except TypeError as e:
+            return Response({'status': 'ERROR', 'message': str(e).replace('create() ', '')})
+
+
+class CreateInvoice(APIView):
+    def post(self, request):
+        try:
+            receipt = Receipt.objects.get(receipt_it=request.data['receipt_id'])
+            invoice = Invoice.create(receipt=receipt)
+            ended = request.data.get('ended', False)
+            if isinstance(ended, bool) and ended:
+                invoice.end_invoice()
+            serializer = InvoiceSerializer(invoice, many=False, context={'request': request})
+            return Response({'status': 'OK', 'invoice': serializer.data})
+        except Receipt.DoesNotExist:
+            return Response({'status': 'ERROR', 'message': 'Receipt with provided receipt_id does not exist'})
+        except KeyError:
+            return Response({'status': 'ERROR', 'message': 'missing argument: receipt_id'})
+        except TypeError as e:
+            return Response({'status': 'ERROR', 'message': str(e).replace('create() ', '')})
+
+
+class CreateAdvanceInvoice(APIView):
+    def post(self, request):
+        try:
+            invoice = Invoice.objects.get(invoice_id=request.data['invoice_id'])
+            advance_invoice = AdvanceInvoice.create(invoice, request.data['payment'])
+            serializer = AdvanceInvoiceSerializer(advance_invoice, many=False, context={'request': request})
+            return Response({'status': 'OK', 'advance_invoice': serializer.data})
+        except Invoice.DoesNotExist:
+            return Response({'status': 'ERROR', 'message': 'Invoice with provided invoice_id does not exist'})
+        except KeyError as e:
+            return Response({'status': 'ERROR', 'message': str(e)})
+        except TypeError as e:
+            return Response({'status': 'ERROR', 'message': str(e).replace('create() ', '')})
+
+
+class EndInvoice(APIView):
+    def post(self, request):
+        try:
+            invoice = Invoice.objects.get(invoice_id=request.data['invoice_id'])
+            if invoice.ended:
+                return Response({'status': 'ERROR', 'message': 'Invoice is already ended'})
+            invoice.end_invoice()
+            advance_invoices = AdvanceInvoice.objects.filter(invoice=invoice)
+            invoice_serializer = InvoiceSerializer(invoice, many=False, context={'request': request})
+            if advance_invoices:
+                advance_invoices_serializer = AdvanceInvoiceSerializer(advance_invoices, many=True,
+                                                                       context={'request': request})
+                return Response({'status': 'OK', 'invoice': invoice_serializer.data,
+                                 'advance_invoices': advance_invoices_serializer.data})
+            return Response({'status': 'OK', 'invoice': invoice_serializer.data})
+        except Invoice.DoesNotExist:
+            return Response({'status': 'ERROR', 'message': 'Invoice with provided invoice_id does not exist'})
+        except KeyError:
+            return Response({'status': 'ERROR', 'message': 'missing argument: invoice_id'})
+
+
+class GenerateSalesReport(APIView):
+    def get(self, request, year: int, month: int):
+        date = datetime.now()
+        if 2000 > year > date.year:
+            return Response({'status': 'ERROR', 'message': 'year error'})
+        if 1 > month > 12 or (year == date.year and month > date.month):
+            return Response({'status': 'ERROR', 'message': 'month_error'})
+        invoices = Invoice.objects.filter(time__year=date.year, time__month=date.month)
+        if invoices:
+            response = HttpResponse(content_type='text/csv')
+            response['Content-Disposition'] = 'attachment; filename="Sales_report_{}.{}.csv"'.format(month, year)
+            df = generate_sales_report(invoices)
+            df.to_csv(path_or_buf=response, sep=',', float_format='%.2f', index=False, decimal=".")
+            return response
+        else:
+            return Response({'status': 'ERROR', 'message': 'no receipts in selected month'})

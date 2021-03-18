@@ -267,6 +267,7 @@ class Transaction(models.Model):
     vendor = models.ForeignKey('Company', on_delete=models.CASCADE, null=False)
     customer = models.ForeignKey('Customer', on_delete=models.CASCADE, null=False)
     marketplace = models.ForeignKey('Marketplace', on_delete=models.CASCADE, null=False)
+    transaction_id = models.CharField(max_length=20, unique=True)
     items = models.ManyToManyField('SoldItem')
     country_code = models.CharField(max_length=2, null=False)
     refund = models.BooleanField(default=False)
@@ -295,12 +296,20 @@ class Transaction(models.Model):
             return True
 
     @classmethod
+    def _generate_transaction_id(cls):
+        transaction_id = get_random_string(length=20)
+        if cls.objects.filter(transaction_id=transaction_id):
+            transaction_id = get_random_string(length=20)
+        return transaction_id
+
+    @classmethod
     def create(cls, vendor: Company, customer: Customer, marketplace: Marketplace, country_code: str,
                refund: bool = False, adjustment: bool = False):
         cls._validate_data(vendor=vendor, customer=customer, marketplace=marketplace, country_code=country_code,
                            refund=refund, adjustment=adjustment)
+        transaction_id = cls._generate_transaction_id()
         instance = cls(vendor=vendor, customer=customer, marketplace=marketplace, country_code=country_code,
-                       refund=refund, adjustment=adjustment)
+                       refund=refund, adjustment=adjustment, transaction_id=transaction_id)
         instance.save()
         return instance
 
