@@ -1,11 +1,14 @@
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.response import Response
+from django.http import HttpResponse
+from datetime import datetime
 from .models import (Address, Company, Customer, Marketplace, Tax, Item, SoldItem, Transaction, Receipt, Invoice,
                      AdvanceInvoice)
 from .serializers import (AddressSerializer, CompanySerializer, CustomerSerializer, MarketplaceSerializer,
                           TaxSerializer, ItemSerializer, SoldItemSerializer, TransactionSerializer, ReceiptSerializer,
                           InvoiceSerializer, AdvanceInvoiceSerializer)
+from .functions import generate_sales_report
 
 
 class AddressViewSet(ModelViewSet):
@@ -247,3 +250,20 @@ class EndInvoice(APIView):
         except KeyError:
             return Response({'status': 'ERROR', 'message': 'missing argument: invoice_id'})
 
+
+class GenerateSalesReport(APIView):
+    def get(self, request, year: int, month: int):
+        date = datetime.now()
+        if 2000 > year > date.year:
+            return Response({'status': 'ERROR', 'message': 'year error'})
+        if 1 > month > 12 or (year == date.year and month > date.month):
+            return Response({'status': 'ERROR', 'message': 'month_error'})
+        invoices = Invoice.objects.filter(time__year=date.year, time__month=date.month)
+        if invoices:
+            response = HttpResponse(content_type='text/csv')
+            response['Content-Disposition'] = 'attachment; filename="Sales_report_{}.{}.csv"'.format(month, year)
+            df = generate_sales_report(invoices)
+            df.to_csv(path_or_buf=response, sep=',', float_format='%.2f', index=False, decimal=".")
+            return response
+        else:
+            return Response({'status': 'ERROR', 'message': 'no receipts in selected month'})
