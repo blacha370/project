@@ -80,20 +80,23 @@ class AddCustomer(APIView):
 
     def post(self, request):
         address_dict = {key: value for key, value in request.data.items() if key in self.address_keys}
-        try:
-            address = Address.create(**address_dict)
-        except TypeError as e:
-            print(e)
-            return Response({'status': 'ERROR', 'message': str(e).replace('create() ', '')})
         customer_dict = {key: value for key, value in request.data.items() if key in self.customer_keys}
-        customer_dict['address'] = address
         try:
+            if customer := self.check_if_customer_exists(address_dict=address_dict, customer_dict=customer_dict):
+                serializer = CustomerSerializer(customer, many=False, context={'request': request})
+                return Response({'status': 'OK', 'customer': serializer.data, 'message': 'customer already exists'})
+            address = Address.create(**address_dict)
+            customer_dict['address'] = address
             customer = Customer.create(**customer_dict)
+            serializer = CustomerSerializer(customer, many=False, context={'request': request})
+            return Response({'status': 'OK', 'customer': serializer.data})
         except TypeError as e:
-            address.delete()
+            try:
+                if isinstance(dict(locals())['address'], Address):
+                    dict(locals())['address'].delete()
+            except KeyError:
+                pass
             return Response({'status': 'ERROR', 'message': str(e).replace('create() ', '')})
-        serializer = CustomerSerializer(customer, many=False, context={'request': request})
-        return Response({'status': 'OK', 'customer': serializer.data})
 
     @staticmethod
     def check_if_customer_exists(address_dict, customer_dict):
