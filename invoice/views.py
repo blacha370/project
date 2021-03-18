@@ -211,3 +211,18 @@ class CreateInvoice(APIView):
         except TypeError as e:
             return Response({'status': 'ERROR', 'message': str(e).replace('create() ', '')})
 
+
+class CreateAdvanceInvoice(APIView):
+    def post(self, request):
+        try:
+            invoice = Invoice.objects.get(invoice_id=request.data['invoice_id'])
+            advance_invoice = AdvanceInvoice.create(invoice, request.data['payment'])
+            serializer = AdvanceInvoiceSerializer(advance_invoice, many=False, context={'request': request})
+            return Response({'status': 'OK', 'advance_invoice': serializer.data})
+        except Invoice.DoesNotExist:
+            return Response({'status': 'ERROR', 'message': 'Invoice with provided invoice_id does not exist'})
+        except KeyError as e:
+            return Response({'status': 'ERROR', 'message': str(e)})
+        except TypeError as e:
+            return Response({'status': 'ERROR', 'message': str(e).replace('create() ', '')})
+
