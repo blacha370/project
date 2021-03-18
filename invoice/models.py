@@ -30,7 +30,7 @@ class Address(models.Model):
             if not isinstance(apartment_number, int) or isinstance(apartment_number, bool) or apartment_number <= 0:
                 messages.append('Apartment number error')
         if messages:
-            raise TypeError
+            raise TypeError(', '.join(messages))
         else:
             return True
 
@@ -68,7 +68,7 @@ class Company(models.Model):
         if not isinstance(address, Address) or cls.objects.filter(address=address):
             messages.append('Address error')
         if messages:
-            raise TypeError(messages)
+            raise TypeError(', '.join(messages))
         else:
             return True
 
@@ -101,7 +101,7 @@ class Customer(models.Model):
         if not isinstance(address, Address):
             messages.append('Address error')
         if messages:
-            raise TypeError(messages)
+            raise TypeError(', '.join(messages))
         else:
             return True
 
@@ -134,6 +134,8 @@ class Tax(models.Model):
     def create(cls, tax_value: float):
         if not isinstance(tax_value, float) or tax_value < 0 or tax_value >= 1:
             raise TypeError('Tax value error: tax_value should be float greater on equal to 0 and lower than 1')
+        if cls.objects.filter(tax_value=tax_value):
+            raise TypeError('Tax value error: tax with this value exist')
         tax_name = 'Vat_' + '{}'.format(round(tax_value, 2))
         instance = cls(tax_value=tax_value, tax_name=tax_name)
         instance.save()
@@ -184,7 +186,7 @@ class Item(models.Model):
         if not isinstance(vat, Tax):
             messages.append('Vat error')
         if messages:
-            raise TypeError(messages)
+            raise TypeError(', '.join(messages))
         else:
             return True
 
@@ -228,7 +230,7 @@ class SoldItem(models.Model):
         if not isinstance(trial, bool) and trial is not None:
             messages.append('Trial error')
         if messages:
-            raise TypeError(messages)
+            raise TypeError(', '.join(messages))
         else:
             return True
 
@@ -288,7 +290,7 @@ class Transaction(models.Model):
         if not isinstance(adjustment, bool):
             messages.append('Adjustment error')
         if messages:
-            raise TypeError(messages)
+            raise TypeError(', '.join(messages))
         else:
             return True
 
@@ -421,7 +423,7 @@ class AdvanceInvoice(models.Model):
             messages.append('Payment error')
 
         if messages:
-            raise TypeError(messages)
+            raise TypeError(', '.join(messages))
         else:
             return True
 
