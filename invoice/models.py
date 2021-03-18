@@ -30,7 +30,7 @@ class Address(models.Model):
             if not isinstance(apartment_number, int) or isinstance(apartment_number, bool) or apartment_number <= 0:
                 messages.append('Apartment number error')
         if messages:
-            raise TypeError
+            raise TypeError(', '.join(messages))
         else:
             return True
 
@@ -68,7 +68,7 @@ class Company(models.Model):
         if not isinstance(address, Address) or cls.objects.filter(address=address):
             messages.append('Address error')
         if messages:
-            raise TypeError(messages)
+            raise TypeError(', '.join(messages))
         else:
             return True
 
@@ -101,7 +101,7 @@ class Customer(models.Model):
         if not isinstance(address, Address):
             messages.append('Address error')
         if messages:
-            raise TypeError(messages)
+            raise TypeError(', '.join(messages))
         else:
             return True
 
@@ -134,6 +134,8 @@ class Tax(models.Model):
     def create(cls, tax_value: float):
         if not isinstance(tax_value, float) or tax_value < 0 or tax_value >= 1:
             raise TypeError('Tax value error: tax_value should be float greater on equal to 0 and lower than 1')
+        if cls.objects.filter(tax_value=tax_value):
+            raise TypeError('Tax value error: tax with this value exist')
         tax_name = 'Vat_' + '{}'.format(round(tax_value, 2))
         instance = cls(tax_value=tax_value, tax_name=tax_name)
         instance.save()
@@ -160,18 +162,18 @@ class Item(models.Model):
     ASIN = models.CharField(max_length=10, null=False)
     title = models.CharField(max_length=50, null=False)
     name = models.CharField(max_length=50, null=False)
-    price = models.PositiveSmallIntegerField()
+    price = models.DecimalField(decimal_places=2, max_digits=7)
     category = models.PositiveSmallIntegerField(choices=CATEGORIES, null=True)
-    earnings = models.PositiveSmallIntegerField()
+    earnings = models.DecimalField(decimal_places=2, max_digits=7)
     subscription_term = models.PositiveSmallIntegerField(choices=SUBSCRIPTION_TERMS, default=None, null=True)
     vat = models.ForeignKey('Tax', on_delete=models.CASCADE)
 
     @classmethod
     def _validate_data(cls, title, name, price, earnings, category, subscription_term, vat):
         messages = []
-        if not isinstance(title, str) or len(title) > cls.title.field.max_length:
+        if not isinstance(title, str) or len(title) > cls.title.field.max_length or title.replace(' ', '') == '':
             messages.append('Title error')
-        if not isinstance(name, str) or len(name) > cls.name.field.max_length:
+        if not isinstance(name, str) or len(name) > cls.name.field.max_length or name.replace(' ', '') == '':
             messages.append('Name error')
         if not isinstance(price, (int, float)) or isinstance(price, bool) or price <= 0:
             messages.append('Price error')
@@ -184,7 +186,7 @@ class Item(models.Model):
         if not isinstance(vat, Tax):
             messages.append('Vat error')
         if messages:
-            raise TypeError(messages)
+            raise TypeError(', '.join(messages))
         else:
             return True
 
@@ -196,10 +198,17 @@ class Item(models.Model):
         return asin
 
     @classmethod
-    def create(cls, title: str, name: str, price: int, earnings: int, vat: Tax, category: int = None,
+    def create(cls, title: str, name: str, price: (int, float), earnings: (int, float), vat: Tax, category: int = None,
                subscription_term: int = None):
         cls._validate_data(title, name, price, earnings, category, subscription_term, vat)
         asin = cls._generate_asin()
+        if category is not None and (category <= 0 or category > len(cls.CATEGORIES)):
+            category = None
+            subscription_term = None
+        elif category != 1:
+            subscription_term = None
+        elif subscription_term is None:
+            subscription_term = 1
         instance = cls(ASIN=asin, title=title, name=name, price=price, earnings=earnings, category=category,
                        subscription_term=subscription_term, vat=vat)
         instance.save()
@@ -216,43 +225,49 @@ class SoldItem(models.Model):
         messages = []
         if not isinstance(item, Item):
             messages.append('Item error')
-        if not isinstance(units, int) or isinstance(units, bool):
+        if not isinstance(units, int) or isinstance(units, bool) or units <= 0:
             messages.append('Units error')
         if not isinstance(trial, bool) and trial is not None:
             messages.append('Trial error')
         if messages:
-            raise TypeError(messages)
+            raise TypeError(', '.join(messages))
         else:
             return True
 
     @classmethod
     def create(cls, item: Item, units: int, trial: bool = None):
         cls._validate_data(item, units, trial)
+        if item.category != 1:
+            trial = None
+        elif trial is None:
+            trial = False
         instance = cls(item=item, units=units, trial=trial)
         instance.save()
         return instance
 
     @property
     def net_value(self):
-        return self.item.price * self.units
+        return round(self.item.price * self.units, 2)
 
     @property
     def vat_value(self):
-        return {'name': self.item.vat.tax_name, 'value': self.item.price * self.item.vat.tax_value * self.units}
+        return {'name': self.item.vat.tax_name, 'value': round(self.item.price * self.item.vat.tax_value * self.units,
+                                                               2)}
 
     @property
     def total_value(self):
-        return self.net_value + self.vat_value
+        return round(self.net_value + self.vat_value['value'], 2)
 
     @property
     def total_earnings(self):
-        return self.item.earnings * self.units
+        return round(self.item.earnings * self.units, 2)
 
 
 class Transaction(models.Model):
     vendor = models.ForeignKey('Company', on_delete=models.CASCADE, null=False)
     customer = models.ForeignKey('Customer', on_delete=models.CASCADE, null=False)
     marketplace = models.ForeignKey('Marketplace', on_delete=models.CASCADE, null=False)
+    transaction_id = models.CharField(max_length=20, unique=True)
     items = models.ManyToManyField('SoldItem')
     country_code = models.CharField(max_length=2, null=False)
     refund = models.BooleanField(default=False)
@@ -260,41 +275,42 @@ class Transaction(models.Model):
     time = models.DateTimeField(auto_now_add=True)
 
     @classmethod
-    def _validate_data(cls, vendor, customer, items, country_code, refund, adjustment):
+    def _validate_data(cls, vendor, customer, marketplace, country_code, refund, adjustment):
         messages = []
         if not isinstance(vendor, Company):
             messages.append('Vendor error')
         if not isinstance(customer, Customer):
             messages.append('Customer error')
-        if not isinstance(country_code, str) or len(country_code) > 2 or len(country_code) <= 0:
+        if not isinstance(marketplace, Marketplace):
+            messages.append('Marketplace error')
+        if not isinstance(country_code, str) or len(country_code) > 2 or len(country_code) == 0 or \
+                country_code.replace(' ', '') == '':
             messages.append('Country code error')
         if not isinstance(refund, bool):
             messages.append('Refund error')
         if not isinstance(adjustment, bool):
             messages.append('Adjustment error')
-        if not isinstance(items, (list, set, tuple)) or not len(items):
-            messages.append('Items error')
-        for item in items:
-            try:
-                SoldItem.objects.get(pk=item)
-            except SoldItem.doesNotExist:
-                messages.append('Item {} does not exist'.format('item'))
         if messages:
-            raise TypeError(messages)
+            raise TypeError(', '.join(messages))
         else:
             return True
 
     @classmethod
-    def create(cls, vendor: Company, customer: Customer, items: set, country_code: str, refund: bool = False,
-               adjustment: bool = False):
-        cls._validate_data(vendor=vendor, customer=customer, items=items, country_code=country_code, refund=refund,
-                           adjustment=adjustment)
-        instance = cls(vendor=vendor, customer=customer, country_code=country_code, refund=refund,
-                       adjustment=adjustment)
+    def _generate_transaction_id(cls):
+        transaction_id = get_random_string(length=20)
+        if cls.objects.filter(transaction_id=transaction_id):
+            transaction_id = get_random_string(length=20)
+        return transaction_id
+
+    @classmethod
+    def create(cls, vendor: Company, customer: Customer, marketplace: Marketplace, country_code: str,
+               refund: bool = False, adjustment: bool = False):
+        cls._validate_data(vendor=vendor, customer=customer, marketplace=marketplace, country_code=country_code,
+                           refund=refund, adjustment=adjustment)
+        transaction_id = cls._generate_transaction_id()
+        instance = cls(vendor=vendor, customer=customer, marketplace=marketplace, country_code=country_code,
+                       refund=refund, adjustment=adjustment, transaction_id=transaction_id)
         instance.save()
-        for item in items:
-            sold_item = SoldItem.objects.get(pk=item)
-            instance.items.add(sold_item)
         return instance
 
     @property
@@ -326,7 +342,7 @@ class Transaction(models.Model):
     def total_earnings(self):
         total_earnings = 0
         for item in self.items.all():
-            total_earnings += item.earnings
+            total_earnings += item.total_earnings
         return total_earnings
 
 
@@ -337,7 +353,8 @@ class Receipt(models.Model):
 
     @classmethod
     def _validate_data(cls, transaction):
-        if not isinstance(transaction, Transaction):
+        if not isinstance(transaction, Transaction) or not transaction.items.count() or \
+                cls.objects.filter(transaction=transaction):
             raise TypeError('Transaction error')
         return True
 
@@ -365,7 +382,7 @@ class Invoice(models.Model):
 
     @classmethod
     def _validate_data(cls, receipt):
-        if isinstance(receipt, Receipt):
+        if not isinstance(receipt, Receipt) or cls.objects.filter(receipt=receipt):
             raise TypeError('Receipt error')
         return True
 
@@ -399,24 +416,30 @@ class AdvanceInvoice(models.Model):
     @classmethod
     def _validate_data(cls, invoice, payment):
         messages = []
+        amount = 0
         if not isinstance(invoice, Invoice) or invoice.ended:
             messages.append('Invoice error')
+        else:
+            for advance_invoice in cls.objects.filter(invoice=invoice):
+                amount += advance_invoice.payment
+
+            if amount + payment > invoice.receipt.transaction.total_value:
+                messages.append('Value error')
+            elif amount + payment == invoice.receipt.transaction.total_value:
+                invoice.end_invoice()
+
         if not isinstance(payment, (int, float)) or isinstance(payment, bool) or payment <= 0:
             messages.append('Payment error')
-        amount = 0
-        for advance_invoice in cls.objects.filter(invoice=invoice):
-            amount += advance_invoice.payment
-        if amount >= invoice.receipt.transaction.total_value:
-            messages.append('Value error')
+
         if messages:
-            raise TypeError(messages)
+            raise TypeError(', '.join(messages))
         else:
             return True
 
     @classmethod
     def _generate_invoice_id(cls, invoice_id):
         advance_invoice_id = invoice_id + '-01'
-        if cls.objects.get(advance_invoice_id=advance_invoice_id):
+        while cls.objects.filter(advance_invoice_id=advance_invoice_id):
             id_number = int(advance_invoice_id[-2:])
             id_number += 1
             if id_number < 10:
@@ -430,4 +453,5 @@ class AdvanceInvoice(models.Model):
         cls._validate_data(invoice=invoice, payment=payment)
         advance_invoice_id = cls._generate_invoice_id(invoice.invoice_id)
         instance = cls(invoice=invoice, payment=payment, advance_invoice_id=advance_invoice_id)
+        instance.save()
         return instance
