@@ -10,6 +10,16 @@ class TaxTestCase(TestCase):
         self.assertEqual(tax.tax_name, 'Vat_0.23')
         self.assertEqual(Tax.objects.count(), 1)
 
+    def test_create_multiple_taxes_with_same_value(self):
+        tax = Tax.create(tax_value=0.23)
+        self.assertIsInstance(tax, Tax)
+        self.assertEqual(tax.tax_value, 0.23)
+        self.assertEqual(tax.tax_name, 'Vat_0.23')
+        self.assertEqual(Tax.objects.count(), 1)
+
+        self.assertRaises(TypeError, Tax.create, tax_value=0.23)
+        self.assertEqual(Tax.objects.count(), 1)
+
     def test_create_tax_with_not_float_as_tax_value(self):
         self.assertRaises(TypeError, Tax.create, tax_value='')
 
