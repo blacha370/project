@@ -135,12 +135,14 @@ class CreateItem(APIView):
     def post(self, request):
         item_dict = {key: value for key, value in request.data.items() if key in self.fields}
         try:
-            vat = Tax.objects.get(tax_value=request.data['tax_value'])
+            if not isinstance(request.data['tax_value'], (int, float)) or isinstance(request.data['tax_value'], bool):
+                raise TypeError('Tax_value error')
+            vat = Tax.objects.get(_tax_value=request.data['tax_value'])
             item = Item.create(vat=vat, **item_dict)
             serializer = ItemSerializer(item, many=False, context={'request': request})
             return Response({'status': 'OK', 'item': serializer.data})
         except KeyError as e:
-            return Response({'status': 'Erorr', 'message': 'missing argument: tax_value'})
+            return Response({'status': 'ERROR', 'message': 'missing argument: tax_value'})
         except Tax.DoesNotExist:
             return Response({'status': 'ERROR', 'message': 'Tax with provided tax_value does not exist'})
         except TypeError as e:
@@ -148,38 +150,52 @@ class CreateItem(APIView):
 
 
 class CreateTransaction(APIView):
-    transaction_keys = ['SKU', 'app_id', 'marketplace_name', 'country_code', 'refund', 'adjustment']
+    transaction_keys = ['country_code', 'refund', 'adjustment']
     items_key = 'items'
 
     def post(self, request):
         items = []
         error_items = []
         try:
+            if not isinstance(request.data['items'], (list, tuple)) or not request.data['items']:
+                return Response({'status': 'ERROR', 'message': 'items should be list of dicts'})
             for item in request.data['items']:
                 try:
-                    if item['count'] <= 0 or not isinstance(item['count'], int) or isinstance(item['count'], bool):
+                    if not isinstance(item['count'], int) or isinstance(item['count'], bool) or  item['count'] <= 0:
                         error_items.append(item['ASIN'])
                         continue
                     items.append((Item.objects.get(ASIN=item['ASIN']), item['count']))
                 except Item.DoesNotExist:
                     error_items.append(item['ASIN'])
                 except KeyError:
-                    return Response({'status': 'ERROR', 'message': 'item {} does not have count'.format(item['ASIN'])})
-        except KeyError:
-            return Response({'status': 'ERROR', 'message': 'missing argument: items'})
-        if error_items:
-            return Response({'status': 'ERROR', 'message': 'items error: {}'.format(', '.join(error_items))})
-
-        transaction_dict = {key: value for key, value in request.data.items() if key in self.transaction_keys}
-        try:
+                    return Response({'status': 'ERROR', 'message': 'each item should contain \'ASIN\' and \'count\' keys'})
+                except TypeError:
+                    return Response({'status': 'ERROR', 'message': 'item should be dict'})
+            if error_items:
+                return Response({'status': 'ERROR', 'message': 'items error: {}'.format(', '.join(error_items))})
+            vendor = Company.objects.get(SKU=request.data['SKU'])
+            customer = Customer.objects.get(app_id=request.data['app_id'])
+            marketplace = Marketplace.objects.get(name=request.data['marketplace_name'])
+            transaction_dict = {key: value for key, value in request.data.items() if key in self.transaction_keys}
+            transaction_dict['vendor'] = vendor
+            transaction_dict['customer'] = customer
+            transaction_dict['marketplace'] = marketplace
             transaction = Transaction.create(**transaction_dict)
             for item in items:
                 sold_item = SoldItem.create(item=item[0], units=item[1])
                 transaction.items.add(sold_item)
             serializer = TransactionSerializer(transaction, many=False, context={'request': request})
             return Response({'status': 'OK', 'transaction': serializer.data})
+        except Company.DoesNotExist:
+            return Response({'status': 'ERROR', 'message': 'Company with provided SKU does not exist'})
+        except Customer.DoesNotExist:
+            return Response({'status': 'ERROR', 'message': 'Customer with provided app_id does not exist'})
+        except Marketplace.DoesNotExist:
+            return Response({'status': 'ERROR', 'message': 'Marketplace with provided marketplace_name does not exist'})
+        except KeyError as e:
+            return Response({'status': 'ERROR', 'message': 'missing argument: ' + str(e).replace('\'', '')})
         except TypeError as e:
-            return Response({'status': 'ERROR', 'message': str(e)})
+            return Response({'status': 'ERROR', 'message': str(e).replace('create() ', '')})
 
 
 class CreateReceipt(APIView):
