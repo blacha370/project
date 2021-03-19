@@ -135,12 +135,14 @@ class CreateItem(APIView):
     def post(self, request):
         item_dict = {key: value for key, value in request.data.items() if key in self.fields}
         try:
-            vat = Tax.objects.get(tax_value=request.data['tax_value'])
+            if not isinstance(request.data['tax_value'], (int, float)) or isinstance(request.data['tax_value'], bool):
+                raise TypeError('Tax_value error')
+            vat = Tax.objects.get(_tax_value=request.data['tax_value'])
             item = Item.create(vat=vat, **item_dict)
             serializer = ItemSerializer(item, many=False, context={'request': request})
             return Response({'status': 'OK', 'item': serializer.data})
         except KeyError as e:
-            return Response({'status': 'Erorr', 'message': 'missing argument: tax_value'})
+            return Response({'status': 'ERROR', 'message': 'missing argument: tax_value'})
         except Tax.DoesNotExist:
             return Response({'status': 'ERROR', 'message': 'Tax with provided tax_value does not exist'})
         except TypeError as e:
