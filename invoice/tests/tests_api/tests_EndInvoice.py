@@ -37,6 +37,16 @@ class EndInvoiceTestCase(APITestCase):
         self.assertEqual(response.data['invoice']['invoice_id'], self.invoice.invoice_id)
         self.assertTrue(Invoice.objects.get(invoice_id=self.invoice.invoice_id).ended)
 
+    def test_end_invoice_with_advance_invoices(self):
+        AdvanceInvoice.create(invoice=self.invoice, payment=10)
+        self.assertFalse(self.invoice.ended)
+        request = self.factory.post('end_invoice', {'invoice_id': self.invoice.invoice_id}, format='json')
+        response = self.view(request)
+        self.assertEqual(response.data['status'], 'OK')
+        self.assertEqual(response.data['invoice']['invoice_id'], self.invoice.invoice_id)
+        self.assertIsInstance(response.data['advance_invoices'], list)
+        self.assertTrue(Invoice.objects.get(invoice_id=self.invoice.invoice_id).ended)
+
     def test_end_invoice_twice(self):
         self.assertFalse(self.invoice.ended)
         request = self.factory.post('end_invoice', {'invoice_id': self.invoice.invoice_id}, format='json')
