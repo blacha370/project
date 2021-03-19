@@ -1,4 +1,5 @@
 from django.db import models
+from django.contrib.auth.models import User
 from django.utils.crypto import get_random_string
 from django.utils import timezone
 
@@ -393,6 +394,7 @@ class Invoice(models.Model):
     receipt = models.OneToOneField('Receipt', on_delete=models.CASCADE)
     invoice_id = models.CharField(max_length=20, unique=True)
     ended = models.BooleanField(default=False)
+    user = models.ForeignKey(to=User, on_delete=models.CASCADE, null=True, default=None)
     time = models.DateTimeField(default=None, null=True)
 
     @classmethod
@@ -416,10 +418,12 @@ class Invoice(models.Model):
         instance.save()
         return instance
 
-    def end_invoice(self):
-        self.time = timezone.now()
-        self.ended = True
-        self.save()
+    def end_invoice(self, user: User):
+        if isinstance(user, User) and not self.ended:
+            self.time = timezone.now()
+            self.ended = True
+            self.user = user
+            self.save()
 
 
 class AdvanceInvoice(models.Model):
@@ -429,7 +433,7 @@ class AdvanceInvoice(models.Model):
     time = models.DateTimeField(auto_now_add=True)
 
     @classmethod
-    def _validate_data(cls, invoice, payment):
+    def _validate_data(cls, invoice, payment, user):
         messages = []
         amount = 0
         if not isinstance(invoice, Invoice) or invoice.ended:
@@ -442,8 +446,10 @@ class AdvanceInvoice(models.Model):
             if amount + payment > invoice.receipt.transaction.total_value:
                 messages.append('Value error')
             elif amount + payment == invoice.receipt.transaction.total_value:
-                invoice.end_invoice()
-
+                if isinstance(user, User):
+                    invoice.end_invoice(user=user)
+                else:
+                    messages.append('User error')
         if messages:
             raise TypeError(', '.join(messages))
         else:
