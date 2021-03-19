@@ -35,6 +35,22 @@ class CreateReceiptTestCase(APITestCase):
         self.assertEqual(response.data['receipt']['receipt_id'], receipt.receipt_id)
         self.assertEqual(response.data['receipt']['transaction']['transaction_id'], self.transaction.transaction_id)
 
+    def test_create_second_invoice_with_same_transaction_id(self):
+        request = self.factory.post('crate_receipt', {'transaction_id': self.transaction.transaction_id}, format='json')
+        response = self.view(request)
+        receipt = Receipt.objects.get(pk=1)
+        self.assertEqual(Receipt.objects.count(), 1)
+        self.assertEqual(response.data['status'], 'OK')
+        self.assertEqual(response.data['receipt']['receipt_id'], receipt.receipt_id)
+        self.assertEqual(response.data['receipt']['transaction']['transaction_id'], self.transaction.transaction_id)
+
+        request = self.factory.post('crate_receipt', {'transaction_id': self.transaction.transaction_id}, format='json')
+        response = self.view(request)
+        receipt = Receipt.objects.get(pk=1)
+        self.assertEqual(Receipt.objects.count(), 1)
+        self.assertEqual(response.data['status'], 'ERROR')
+        self.assertEqual(response.data['message'], 'Transaction error')
+
     def test_create_receipt_with_not_valid_transaction_id(self):
         request = self.factory.post('crate_receipt', {'transaction_id': 'not_valid_transaction_id'}, format='json')
         response = self.view(request)
