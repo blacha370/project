@@ -1,6 +1,8 @@
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.response import Response
+from django.contrib.auth.decorators import login_required
+from django.utils.decorators import method_decorator
 from django.http import HttpResponse
 from datetime import datetime
 from .models import (Address, Company, Customer, Marketplace, Tax, Item, SoldItem, Transaction, Receipt, Invoice,
@@ -77,6 +79,7 @@ class AdvanceInvoiceViewSet(ModelViewSet):
     http_method_names = ['get']
 
 
+@method_decorator(login_required, name='dispatch')
 class AddCustomer(APIView):
     address_keys = ['country', 'city', 'postal_code', 'street', 'building_number', 'apartment_number']
     customer_keys = ['name']
@@ -114,6 +117,7 @@ class AddCustomer(APIView):
         return False
 
 
+@method_decorator(login_required, name='dispatch')
 class CreateTax(APIView):
     field = 'tax_value'
 
@@ -129,6 +133,7 @@ class CreateTax(APIView):
             return Response({'status': 'ERROR', 'message': str(e)})
 
 
+@method_decorator(login_required, name='dispatch')
 class CreateItem(APIView):
     fields = ['title', 'name', 'price', 'earnings', 'category', 'subscription_term']
 
@@ -149,6 +154,7 @@ class CreateItem(APIView):
             return Response({'status': 'ERROR', 'message': str(e).replace('create() ', '')})
 
 
+@method_decorator(login_required, name='dispatch')
 class CreateTransaction(APIView):
     transaction_keys = ['country_code', 'refund', 'adjustment']
     items_key = 'items'
@@ -198,6 +204,7 @@ class CreateTransaction(APIView):
             return Response({'status': 'ERROR', 'message': str(e).replace('create() ', '')})
 
 
+@method_decorator(login_required, name='dispatch')
 class CreateReceipt(APIView):
     def post(self, request):
         try:
@@ -213,6 +220,7 @@ class CreateReceipt(APIView):
             return Response({'status': 'ERROR', 'message': str(e).replace('create() ', '')})
 
 
+@method_decorator(login_required, name='dispatch')
 class CreateInvoice(APIView):
     def post(self, request):
         try:
@@ -220,7 +228,7 @@ class CreateInvoice(APIView):
             invoice = Invoice.create(receipt=receipt)
             ended = request.data.get('ended', False)
             if isinstance(ended, bool) and ended:
-                invoice.end_invoice()
+                invoice.end_invoice(request.user)
             serializer = InvoiceSerializer(invoice, many=False, context={'request': request})
             return Response({'status': 'OK', 'invoice': serializer.data})
         except Receipt.DoesNotExist:
@@ -231,6 +239,7 @@ class CreateInvoice(APIView):
             return Response({'status': 'ERROR', 'message': str(e).replace('create() ', '')})
 
 
+@method_decorator(login_required, name='dispatch')
 class CreateAdvanceInvoice(APIView):
     def post(self, request):
         try:
@@ -246,13 +255,14 @@ class CreateAdvanceInvoice(APIView):
             return Response({'status': 'ERROR', 'message': str(e).replace('create() ', '')})
 
 
+@method_decorator(login_required, name='dispatch')
 class EndInvoice(APIView):
     def post(self, request):
         try:
             invoice = Invoice.objects.get(invoice_id=request.data['invoice_id'])
             if invoice.ended:
                 return Response({'status': 'ERROR', 'message': 'Invoice is already ended'})
-            invoice.end_invoice()
+            invoice.end_invoice(request.user)
             advance_invoices = AdvanceInvoice.objects.filter(invoice=invoice)
             invoice_serializer = InvoiceSerializer(invoice, many=False, context={'request': request})
             if advance_invoices:
@@ -267,6 +277,7 @@ class EndInvoice(APIView):
             return Response({'status': 'ERROR', 'message': 'missing argument: invoice_id'})
 
 
+@method_decorator(login_required, name='dispatch')
 class GenerateSalesReport(APIView):
     def get(self, request, year: int, month: int):
         date = datetime.now()
