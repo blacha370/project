@@ -209,6 +209,8 @@ class CreateReceipt(APIView):
             return Response({'status': 'ERROR', 'message': 'Transaction with provided id does not exist'})
         except KeyError:
             return Response({'status': 'ERROR', 'message': 'missing argument: transaction_id'})
+        except TypeError as e:
+            return Response({'status': 'ERROR', 'message': str(e).replace('create() ', '')})
 
 
 class CreateInvoice(APIView):
