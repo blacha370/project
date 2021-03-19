@@ -270,9 +270,10 @@ class EndInvoice(APIView):
 class GenerateSalesReport(APIView):
     def get(self, request, year: int, month: int):
         date = datetime.now()
-        if 2000 > year > date.year:
+        if not isinstance(year, int) or isinstance(year, bool) or not 2000 <= year <= date.year:
             return Response({'status': 'ERROR', 'message': 'year error'})
-        if 1 > month > 12 or (year == date.year and month > date.month):
+        if not isinstance(month, int) or isinstance(month, bool) or not 1 <= month <= 12 or (year == date.year and
+                                                                                             month > date.month):
             return Response({'status': 'ERROR', 'message': 'month_error'})
         invoices = Invoice.objects.filter(time__year=date.year, time__month=date.month)
         if invoices:
