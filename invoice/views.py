@@ -214,7 +214,7 @@ class CreateReceipt(APIView):
 class CreateInvoice(APIView):
     def post(self, request):
         try:
-            receipt = Receipt.objects.get(receipt_it=request.data['receipt_id'])
+            receipt = Receipt.objects.get(receipt_id=request.data['receipt_id'])
             invoice = Invoice.create(receipt=receipt)
             ended = request.data.get('ended', False)
             if isinstance(ended, bool) and ended:
