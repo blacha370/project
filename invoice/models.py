@@ -168,7 +168,7 @@ class Item(models.Model):
     name = models.CharField(max_length=50, null=False)
     _price = models.DecimalField(decimal_places=2, max_digits=7)
     category = models.PositiveSmallIntegerField(choices=CATEGORIES, null=True)
-    earnings = models.DecimalField(decimal_places=2, max_digits=7)
+    _earnings = models.DecimalField(decimal_places=2, max_digits=7)
     subscription_term = models.PositiveSmallIntegerField(choices=SUBSCRIPTION_TERMS, default=None, null=True)
     vat = models.ForeignKey('Tax', on_delete=models.CASCADE)
 
@@ -181,7 +181,8 @@ class Item(models.Model):
             messages.append('Name error')
         if not isinstance(price, (int, float)) or isinstance(price, bool) or price <= 0:
             messages.append('Price error')
-        if not(isinstance(earnings, (int, float))) or isinstance(earnings, bool) or earnings <= 0 or earnings > price:
+        if not(isinstance(earnings, (int, float))) or isinstance(earnings, bool) or earnings <= 0 or (
+                isinstance(price, (int, float)) and not isinstance(price, bool) and earnings > price):
             messages.append('Earnings error')
         if not isinstance(category, (int, type(None))) or isinstance(category, bool):
             messages.append('Category error')
@@ -213,7 +214,9 @@ class Item(models.Model):
             subscription_term = None
         elif subscription_term is None:
             subscription_term = 1
-        instance = cls(ASIN=asin, title=title, name=name, _price=price, earnings=earnings, category=category,
+        elif not 1 <= subscription_term <= 7:
+            subscription_term = 1
+        instance = cls(ASIN=asin, title=title, name=name, _price=price, _earnings=earnings, category=category,
                        subscription_term=subscription_term, vat=vat)
         instance.save()
         return instance
@@ -221,6 +224,10 @@ class Item(models.Model):
     @property
     def price(self):
         return float(self._price)
+
+    @property
+    def earnings(self):
+        return float(self._earnings)
 
 
 class SoldItem(models.Model):
