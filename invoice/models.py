@@ -134,7 +134,7 @@ class Tax(models.Model):
     def create(cls, tax_value: float):
         if not isinstance(tax_value, float) or tax_value < 0 or tax_value >= 1:
             raise TypeError('Tax value error: tax_value should be float greater on equal to 0 and lower than 1')
-        if cls.objects.filter(tax_value=tax_value):
+        if cls.objects.filter(_tax_value=tax_value):
             raise TypeError('Tax value error: tax with this value exist')
         tax_name = 'Vat_' + '{}'.format(round(tax_value, 2))
         instance = cls(_tax_value=tax_value, tax_name=tax_name)
@@ -166,7 +166,7 @@ class Item(models.Model):
     ASIN = models.CharField(max_length=10, null=False)
     title = models.CharField(max_length=50, null=False)
     name = models.CharField(max_length=50, null=False)
-    price = models.DecimalField(decimal_places=2, max_digits=7)
+    _price = models.DecimalField(decimal_places=2, max_digits=7)
     category = models.PositiveSmallIntegerField(choices=CATEGORIES, null=True)
     earnings = models.DecimalField(decimal_places=2, max_digits=7)
     subscription_term = models.PositiveSmallIntegerField(choices=SUBSCRIPTION_TERMS, default=None, null=True)
@@ -213,10 +213,14 @@ class Item(models.Model):
             subscription_term = None
         elif subscription_term is None:
             subscription_term = 1
-        instance = cls(ASIN=asin, title=title, name=name, price=price, earnings=earnings, category=category,
+        instance = cls(ASIN=asin, title=title, name=name, _price=price, earnings=earnings, category=category,
                        subscription_term=subscription_term, vat=vat)
         instance.save()
         return instance
+
+    @property
+    def price(self):
+        return float(self._price)
 
 
 class SoldItem(models.Model):
