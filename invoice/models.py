@@ -127,7 +127,7 @@ class Marketplace(models.Model):
 
 
 class Tax(models.Model):
-    tax_value = models.DecimalField(unique=True, decimal_places=2, max_digits=3)
+    _tax_value = models.DecimalField(unique=True, decimal_places=2, max_digits=3)
     tax_name = models.CharField(max_length=8, unique=True)
 
     @classmethod
@@ -137,9 +137,13 @@ class Tax(models.Model):
         if cls.objects.filter(tax_value=tax_value):
             raise TypeError('Tax value error: tax with this value exist')
         tax_name = 'Vat_' + '{}'.format(round(tax_value, 2))
-        instance = cls(tax_value=tax_value, tax_name=tax_name)
+        instance = cls(_tax_value=tax_value, tax_name=tax_name)
         instance.save()
         return instance
+
+    @property
+    def tax_value(self):
+        return float(self._tax_value)
 
 
 class Item(models.Model):
