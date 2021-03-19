@@ -241,7 +241,7 @@ class CreateAdvanceInvoice(APIView):
         except Invoice.DoesNotExist:
             return Response({'status': 'ERROR', 'message': 'Invoice with provided invoice_id does not exist'})
         except KeyError as e:
-            return Response({'status': 'ERROR', 'message': str(e)})
+            return Response({'status': 'ERROR', 'message': 'missing argument: ' + str(e)})
         except TypeError as e:
             return Response({'status': 'ERROR', 'message': str(e).replace('create() ', '')})
 
