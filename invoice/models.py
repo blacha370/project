@@ -1,4 +1,5 @@
 from django.db import models
+from django.contrib.auth.models import User
 from django.utils.crypto import get_random_string
 from django.utils import timezone
 
@@ -127,19 +128,23 @@ class Marketplace(models.Model):
 
 
 class Tax(models.Model):
-    tax_value = models.DecimalField(unique=True, decimal_places=2, max_digits=3)
+    _tax_value = models.DecimalField(unique=True, decimal_places=2, max_digits=3)
     tax_name = models.CharField(max_length=8, unique=True)
 
     @classmethod
     def create(cls, tax_value: float):
         if not isinstance(tax_value, float) or tax_value < 0 or tax_value >= 1:
             raise TypeError('Tax value error: tax_value should be float greater on equal to 0 and lower than 1')
-        if cls.objects.filter(tax_value=tax_value):
+        if cls.objects.filter(_tax_value=tax_value):
             raise TypeError('Tax value error: tax with this value exist')
         tax_name = 'Vat_' + '{}'.format(round(tax_value, 2))
-        instance = cls(tax_value=tax_value, tax_name=tax_name)
+        instance = cls(_tax_value=tax_value, tax_name=tax_name)
         instance.save()
         return instance
+
+    @property
+    def tax_value(self):
+        return float(self._tax_value)
 
 
 class Item(models.Model):
@@ -162,9 +167,9 @@ class Item(models.Model):
     ASIN = models.CharField(max_length=10, null=False)
     title = models.CharField(max_length=50, null=False)
     name = models.CharField(max_length=50, null=False)
-    price = models.DecimalField(decimal_places=2, max_digits=7)
+    _price = models.DecimalField(decimal_places=2, max_digits=7)
     category = models.PositiveSmallIntegerField(choices=CATEGORIES, null=True)
-    earnings = models.DecimalField(decimal_places=2, max_digits=7)
+    _earnings = models.DecimalField(decimal_places=2, max_digits=7)
     subscription_term = models.PositiveSmallIntegerField(choices=SUBSCRIPTION_TERMS, default=None, null=True)
     vat = models.ForeignKey('Tax', on_delete=models.CASCADE)
 
@@ -177,7 +182,8 @@ class Item(models.Model):
             messages.append('Name error')
         if not isinstance(price, (int, float)) or isinstance(price, bool) or price <= 0:
             messages.append('Price error')
-        if not(isinstance(earnings, (int, float))) or isinstance(earnings, bool) or earnings <= 0 or earnings > price:
+        if not(isinstance(earnings, (int, float))) or isinstance(earnings, bool) or earnings <= 0 or (
+                isinstance(price, (int, float)) and not isinstance(price, bool) and earnings > price):
             messages.append('Earnings error')
         if not isinstance(category, (int, type(None))) or isinstance(category, bool):
             messages.append('Category error')
@@ -209,10 +215,20 @@ class Item(models.Model):
             subscription_term = None
         elif subscription_term is None:
             subscription_term = 1
-        instance = cls(ASIN=asin, title=title, name=name, price=price, earnings=earnings, category=category,
+        elif not 1 <= subscription_term <= 7:
+            subscription_term = 1
+        instance = cls(ASIN=asin, title=title, name=name, _price=price, _earnings=earnings, category=category,
                        subscription_term=subscription_term, vat=vat)
         instance.save()
         return instance
+
+    @property
+    def price(self):
+        return float(self._price)
+
+    @property
+    def earnings(self):
+        return float(self._earnings)
 
 
 class SoldItem(models.Model):
@@ -378,6 +394,7 @@ class Invoice(models.Model):
     receipt = models.OneToOneField('Receipt', on_delete=models.CASCADE)
     invoice_id = models.CharField(max_length=20, unique=True)
     ended = models.BooleanField(default=False)
+    user = models.ForeignKey(to=User, on_delete=models.CASCADE, null=True, default=None)
     time = models.DateTimeField(default=None, null=True)
 
     @classmethod
@@ -401,36 +418,38 @@ class Invoice(models.Model):
         instance.save()
         return instance
 
-    def end_invoice(self):
-        self.time = timezone.now()
-        self.ended = True
-        self.save()
+    def end_invoice(self, user: User):
+        if isinstance(user, User) and not self.ended:
+            self.time = timezone.now()
+            self.ended = True
+            self.user = user
+            self.save()
 
 
 class AdvanceInvoice(models.Model):
     invoice = models.ForeignKey('Invoice', on_delete=models.CASCADE)
-    payment = models.SmallIntegerField()
+    _payment = models.DecimalField(decimal_places=2, max_digits=7)
     advance_invoice_id = models.CharField(max_length=23, unique=True)
     time = models.DateTimeField(auto_now_add=True)
 
     @classmethod
-    def _validate_data(cls, invoice, payment):
+    def _validate_data(cls, invoice, payment, user):
         messages = []
         amount = 0
         if not isinstance(invoice, Invoice) or invoice.ended:
             messages.append('Invoice error')
-        else:
+        if not isinstance(payment, (int, float)) or isinstance(payment, bool) or payment <= 0:
+            messages.append('Payment error')
+        if not messages:
             for advance_invoice in cls.objects.filter(invoice=invoice):
                 amount += advance_invoice.payment
-
             if amount + payment > invoice.receipt.transaction.total_value:
                 messages.append('Value error')
             elif amount + payment == invoice.receipt.transaction.total_value:
-                invoice.end_invoice()
-
-        if not isinstance(payment, (int, float)) or isinstance(payment, bool) or payment <= 0:
-            messages.append('Payment error')
-
+                if isinstance(user, User):
+                    invoice.end_invoice(user=user)
+                else:
+                    messages.append('User error')
         if messages:
             raise TypeError(', '.join(messages))
         else:
@@ -449,9 +468,13 @@ class AdvanceInvoice(models.Model):
         return advance_invoice_id
 
     @classmethod
-    def create(cls, invoice: Invoice, payment: (int, float)):
-        cls._validate_data(invoice=invoice, payment=payment)
+    def create(cls, invoice: Invoice, payment: (int, float), user: User):
+        cls._validate_data(invoice=invoice, payment=payment, user=user)
         advance_invoice_id = cls._generate_invoice_id(invoice.invoice_id)
-        instance = cls(invoice=invoice, payment=payment, advance_invoice_id=advance_invoice_id)
+        instance = cls(invoice=invoice, _payment=payment, advance_invoice_id=advance_invoice_id)
         instance.save()
         return instance
+
+    @property
+    def payment(self):
+        return float(self._payment)

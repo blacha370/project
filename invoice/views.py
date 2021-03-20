@@ -1,6 +1,8 @@
 from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.response import Response
+from django.contrib.auth.decorators import login_required
+from django.utils.decorators import method_decorator
 from django.http import HttpResponse
 from datetime import datetime
 from .models import (Address, Company, Customer, Marketplace, Tax, Item, SoldItem, Transaction, Receipt, Invoice,
@@ -77,6 +79,7 @@ class AdvanceInvoiceViewSet(ModelViewSet):
     http_method_names = ['get']
 
 
+@method_decorator(login_required, name='dispatch')
 class AddCustomer(APIView):
     address_keys = ['country', 'city', 'postal_code', 'street', 'building_number', 'apartment_number']
     customer_keys = ['name']
@@ -114,6 +117,7 @@ class AddCustomer(APIView):
         return False
 
 
+@method_decorator(login_required, name='dispatch')
 class CreateTax(APIView):
     field = 'tax_value'
 
@@ -129,82 +133,102 @@ class CreateTax(APIView):
             return Response({'status': 'ERROR', 'message': str(e)})
 
 
+@method_decorator(login_required, name='dispatch')
 class CreateItem(APIView):
     fields = ['title', 'name', 'price', 'earnings', 'category', 'subscription_term']
 
     def post(self, request):
         item_dict = {key: value for key, value in request.data.items() if key in self.fields}
         try:
-            vat = Tax.objects.get(tax_value=request.data['tax_value'])
+            if not isinstance(request.data['tax_value'], (int, float)) or isinstance(request.data['tax_value'], bool):
+                raise TypeError('Tax_value error')
+            vat = Tax.objects.get(_tax_value=request.data['tax_value'])
             item = Item.create(vat=vat, **item_dict)
             serializer = ItemSerializer(item, many=False, context={'request': request})
             return Response({'status': 'OK', 'item': serializer.data})
         except KeyError as e:
-            return Response({'status': 'Erorr', 'message': 'missing argument: tax_value'})
+            return Response({'status': 'ERROR', 'message': 'missing argument: tax_value'})
         except Tax.DoesNotExist:
             return Response({'status': 'ERROR', 'message': 'Tax with provided tax_value does not exist'})
         except TypeError as e:
             return Response({'status': 'ERROR', 'message': str(e).replace('create() ', '')})
 
 
+@method_decorator(login_required, name='dispatch')
 class CreateTransaction(APIView):
-    transaction_keys = ['SKU', 'app_id', 'marketplace_name', 'country_code', 'refund', 'adjustment']
+    transaction_keys = ['country_code', 'refund', 'adjustment']
     items_key = 'items'
 
     def post(self, request):
         items = []
         error_items = []
         try:
+            if not isinstance(request.data['items'], (list, tuple)) or not request.data['items']:
+                return Response({'status': 'ERROR', 'message': 'items should be list of dicts'})
             for item in request.data['items']:
                 try:
-                    if item['count'] <= 0 or not isinstance(item['count'], int) or isinstance(item['count'], bool):
+                    if not isinstance(item['count'], int) or isinstance(item['count'], bool) or  item['count'] <= 0:
                         error_items.append(item['ASIN'])
                         continue
                     items.append((Item.objects.get(ASIN=item['ASIN']), item['count']))
                 except Item.DoesNotExist:
                     error_items.append(item['ASIN'])
                 except KeyError:
-                    return Response({'status': 'ERROR', 'message': 'item {} does not have count'.format(item['ASIN'])})
-        except KeyError:
-            return Response({'status': 'ERROR', 'message': 'missing argument: items'})
-        if error_items:
-            return Response({'status': 'ERROR', 'message': 'items error: {}'.format(', '.join(error_items))})
-
-        transaction_dict = {key: value for key, value in request.data.items() if key in self.transaction_keys}
-        try:
+                    return Response({'status': 'ERROR', 'message': 'each item should contain \'ASIN\' and \'count\' keys'})
+                except TypeError:
+                    return Response({'status': 'ERROR', 'message': 'item should be dict'})
+            if error_items:
+                return Response({'status': 'ERROR', 'message': 'items error: {}'.format(', '.join(error_items))})
+            vendor = Company.objects.get(SKU=request.data['SKU'])
+            customer = Customer.objects.get(app_id=request.data['app_id'])
+            marketplace = Marketplace.objects.get(name=request.data['marketplace_name'])
+            transaction_dict = {key: value for key, value in request.data.items() if key in self.transaction_keys}
+            transaction_dict['vendor'] = vendor
+            transaction_dict['customer'] = customer
+            transaction_dict['marketplace'] = marketplace
             transaction = Transaction.create(**transaction_dict)
             for item in items:
                 sold_item = SoldItem.create(item=item[0], units=item[1])
                 transaction.items.add(sold_item)
             serializer = TransactionSerializer(transaction, many=False, context={'request': request})
             return Response({'status': 'OK', 'transaction': serializer.data})
+        except Company.DoesNotExist:
+            return Response({'status': 'ERROR', 'message': 'Company with provided SKU does not exist'})
+        except Customer.DoesNotExist:
+            return Response({'status': 'ERROR', 'message': 'Customer with provided app_id does not exist'})
+        except Marketplace.DoesNotExist:
+            return Response({'status': 'ERROR', 'message': 'Marketplace with provided marketplace_name does not exist'})
+        except KeyError as e:
+            return Response({'status': 'ERROR', 'message': 'missing argument: ' + str(e).replace('\'', '')})
         except TypeError as e:
-            return Response({'status': 'ERROR', 'message': str(e)})
+            return Response({'status': 'ERROR', 'message': str(e).replace('create() ', '')})
 
 
+@method_decorator(login_required, name='dispatch')
 class CreateReceipt(APIView):
     def post(self, request):
         try:
-            transaction = Transaction.objects.get(pk=request.data['transaction_id'])
+            transaction = Transaction.objects.get(transaction_id=request.data['transaction_id'])
             receipt = Receipt.create(transaction=transaction)
             serializer = ReceiptSerializer(receipt, many=False, context={'request': request})
             return Response({'status': 'OK', 'receipt': serializer.data})
         except Transaction.DoesNotExist:
             return Response({'status': 'ERROR', 'message': 'Transaction with provided id does not exist'})
         except KeyError:
-            return Response({'status': 'Erorr', 'message': 'missing argument: transaction_id'})
+            return Response({'status': 'ERROR', 'message': 'missing argument: transaction_id'})
         except TypeError as e:
             return Response({'status': 'ERROR', 'message': str(e).replace('create() ', '')})
 
 
+@method_decorator(login_required, name='dispatch')
 class CreateInvoice(APIView):
     def post(self, request):
         try:
-            receipt = Receipt.objects.get(receipt_it=request.data['receipt_id'])
+            receipt = Receipt.objects.get(receipt_id=request.data['receipt_id'])
             invoice = Invoice.create(receipt=receipt)
             ended = request.data.get('ended', False)
             if isinstance(ended, bool) and ended:
-                invoice.end_invoice()
+                invoice.end_invoice(request.user)
             serializer = InvoiceSerializer(invoice, many=False, context={'request': request})
             return Response({'status': 'OK', 'invoice': serializer.data})
         except Receipt.DoesNotExist:
@@ -215,28 +239,30 @@ class CreateInvoice(APIView):
             return Response({'status': 'ERROR', 'message': str(e).replace('create() ', '')})
 
 
+@method_decorator(login_required, name='dispatch')
 class CreateAdvanceInvoice(APIView):
     def post(self, request):
         try:
             invoice = Invoice.objects.get(invoice_id=request.data['invoice_id'])
-            advance_invoice = AdvanceInvoice.create(invoice, request.data['payment'])
+            advance_invoice = AdvanceInvoice.create(invoice, request.data['payment'], user=request.user)
             serializer = AdvanceInvoiceSerializer(advance_invoice, many=False, context={'request': request})
             return Response({'status': 'OK', 'advance_invoice': serializer.data})
         except Invoice.DoesNotExist:
             return Response({'status': 'ERROR', 'message': 'Invoice with provided invoice_id does not exist'})
         except KeyError as e:
-            return Response({'status': 'ERROR', 'message': str(e)})
+            return Response({'status': 'ERROR', 'message': 'missing argument: ' + str(e)})
         except TypeError as e:
             return Response({'status': 'ERROR', 'message': str(e).replace('create() ', '')})
 
 
+@method_decorator(login_required, name='dispatch')
 class EndInvoice(APIView):
     def post(self, request):
         try:
             invoice = Invoice.objects.get(invoice_id=request.data['invoice_id'])
             if invoice.ended:
                 return Response({'status': 'ERROR', 'message': 'Invoice is already ended'})
-            invoice.end_invoice()
+            invoice.end_invoice(request.user)
             advance_invoices = AdvanceInvoice.objects.filter(invoice=invoice)
             invoice_serializer = InvoiceSerializer(invoice, many=False, context={'request': request})
             if advance_invoices:
@@ -251,12 +277,14 @@ class EndInvoice(APIView):
             return Response({'status': 'ERROR', 'message': 'missing argument: invoice_id'})
 
 
+@method_decorator(login_required, name='dispatch')
 class GenerateSalesReport(APIView):
     def get(self, request, year: int, month: int):
         date = datetime.now()
-        if 2000 > year > date.year:
+        if not isinstance(year, int) or isinstance(year, bool) or not 2000 <= year <= date.year:
             return Response({'status': 'ERROR', 'message': 'year error'})
-        if 1 > month > 12 or (year == date.year and month > date.month):
+        if not isinstance(month, int) or isinstance(month, bool) or not 1 <= month <= 12 or (year == date.year and
+                                                                                             month > date.month):
             return Response({'status': 'ERROR', 'message': 'month_error'})
         invoices = Invoice.objects.filter(time__year=date.year, time__month=date.month)
         if invoices:
