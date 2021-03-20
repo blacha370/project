@@ -1,4 +1,5 @@
 from rest_framework.test import APITestCase, APIRequestFactory
+from django.contrib.auth.models import User
 from ...views import CreateTransaction, Transaction, Item, SoldItem, Tax, Marketplace, Company, Customer, Address
 
 
@@ -6,6 +7,8 @@ class CreateTransactionTestCase(APITestCase):
     def setUp(self):
         self.factory = APIRequestFactory()
         self.view = CreateTransaction.as_view()
+        self.user = User(username='test', password='test')
+        self.user.save()
         address = Address.create(country='Country', city='City', postal_code='11-222', street='Street',
                                  building_number=1)
         self.company = Company.create(name='Company', address=address)
@@ -27,6 +30,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 1)
         self.assertEqual(SoldItem.objects.count(), 4)
@@ -41,6 +45,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         transaction = Transaction.objects.get(pk=1)
         self.assertEqual(Transaction.objects.count(), 1)
@@ -54,6 +59,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         second_transaction = Transaction.objects.get(pk=2)
         self.assertNotEqual(transaction, second_transaction)
@@ -69,6 +75,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': 1, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -78,6 +85,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': 0, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -87,6 +95,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': 0, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -96,6 +105,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': -1, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -105,6 +115,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': 1.1, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -114,6 +125,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': -1.1, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -123,6 +135,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': True, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -132,6 +145,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': False, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -141,6 +155,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': None, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -150,6 +165,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': list(), 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -159,6 +175,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': tuple(), 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -168,6 +185,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': dict(), 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -177,6 +195,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': set(), 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -188,6 +207,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': '', 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -197,6 +217,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': ' ', 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -208,6 +229,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': '1 ' * 151, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -219,6 +241,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': 1,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -228,6 +251,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': 0,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -237,6 +261,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': -1,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -246,6 +271,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': 1.1,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -255,6 +281,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': -1.1,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -264,6 +291,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': True,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -273,6 +301,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': False,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -282,6 +311,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': None,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -291,6 +321,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': list(),
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -300,6 +331,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': tuple(),
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -309,6 +341,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': dict(),
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -318,6 +351,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': set(),
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -329,6 +363,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': '',
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -338,6 +373,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': ' ',
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -349,6 +385,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': '1' * 101,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -360,6 +397,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': 1, 'country_code': 'PL', 'items': items},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -369,6 +407,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': 0, 'country_code': 'PL', 'items': items},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -378,6 +417,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': -1, 'country_code': 'PL',
                                                            'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -387,6 +427,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': 1.1, 'country_code': 'PL',
                                                            'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -396,6 +437,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': -1.1, 'country_code': 'PL',
                                                            'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -405,6 +447,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': True, 'country_code': 'PL',
                                                            'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -414,6 +457,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': False, 'country_code': 'PL',
                                                            'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -423,6 +467,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': None, 'country_code': 'PL',
                                                            'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -432,6 +477,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': list(), 'country_code': 'PL',
                                                            'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -441,6 +487,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': tuple(), 'country_code': 'PL',
                                                            'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -450,6 +497,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': dict(), 'country_code': 'PL',
                                                            'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -459,6 +507,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': set(), 'country_code': 'PL',
                                                            'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -470,6 +519,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': '', 'country_code': 'PL',
                                                            'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -479,6 +529,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': ' ', 'country_code': 'PL',
                                                            'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -490,6 +541,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': '1' * 51, 'country_code': 'PL',
                                                            'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -501,6 +553,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 1, 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -510,6 +563,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 0, 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -519,6 +573,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': -1, 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -528,6 +583,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 1.1, 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -537,6 +593,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': -1.1, 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -546,6 +603,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': True, 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -555,6 +613,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': False, 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -564,6 +623,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': None, 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -573,6 +633,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': list(), 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -582,6 +643,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': tuple(), 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -591,6 +653,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': dict(), 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -600,6 +663,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': set(), 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -610,6 +674,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': ''}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -619,6 +684,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': ' '}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -628,6 +694,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': '1'}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -637,6 +704,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': '0'}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -646,6 +714,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': '-1'}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -655,6 +724,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': '1.1'}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -664,6 +734,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': '-1.1'}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -673,6 +744,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': 'Text'}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -682,6 +754,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': 1}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -691,6 +764,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': 0}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -700,6 +774,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': -1}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -709,6 +784,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': 1.1}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -718,6 +794,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': -1.1}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -727,6 +804,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': True}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -736,6 +814,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': False}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -745,6 +824,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': None}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -754,6 +834,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': dict()}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -763,6 +844,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': set()}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -774,6 +856,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 1)
         self.assertEqual(SoldItem.objects.count(), 4)
@@ -787,6 +870,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -797,6 +881,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -807,6 +892,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -817,6 +903,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -827,6 +914,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -837,6 +925,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -847,6 +936,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -857,6 +947,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -867,6 +958,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -877,6 +969,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -887,6 +980,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -897,6 +991,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -907,6 +1002,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -917,6 +1013,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -927,6 +1024,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -937,6 +1035,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -947,6 +1046,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -957,6 +1057,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -967,6 +1068,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -978,6 +1080,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -989,6 +1092,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -999,6 +1103,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -1009,6 +1114,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -1019,6 +1125,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -1029,6 +1136,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -1039,6 +1147,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -1049,6 +1158,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -1059,6 +1169,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -1069,6 +1180,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -1079,6 +1191,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -1089,6 +1202,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -1099,6 +1213,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -1110,6 +1225,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -1121,6 +1237,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -1131,6 +1248,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -1142,6 +1260,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -1153,6 +1272,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -1164,6 +1284,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -1175,6 +1296,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -1186,6 +1308,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -1197,6 +1320,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -1208,6 +1332,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -1219,6 +1344,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -1230,6 +1356,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -1241,6 +1368,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -1252,6 +1380,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -1263,6 +1392,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -1274,6 +1404,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -1285,6 +1416,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -1296,6 +1428,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -1307,6 +1440,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -1318,6 +1452,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -1329,6 +1464,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -1341,6 +1477,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -1352,6 +1489,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -1361,6 +1499,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -1369,6 +1508,7 @@ class CreateTransactionTestCase(APITestCase):
 
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'country_code': 'PL', 'items': items}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -1378,6 +1518,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name, 'items': items},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -1387,6 +1528,7 @@ class CreateTransactionTestCase(APITestCase):
         request = self.factory.post('create_transaction', {'SKU': self.company.SKU, 'app_id': self.customer.app_id,
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL'}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -1399,6 +1541,7 @@ class CreateTransactionTestCase(APITestCase):
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items, 'refund': True},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 1)
         self.assertEqual(SoldItem.objects.count(), 4)
@@ -1412,6 +1555,7 @@ class CreateTransactionTestCase(APITestCase):
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items, 'refund': False},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 2)
         self.assertEqual(SoldItem.objects.count(), 8)
@@ -1427,6 +1571,7 @@ class CreateTransactionTestCase(APITestCase):
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items, 'refund': ''},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -1437,6 +1582,7 @@ class CreateTransactionTestCase(APITestCase):
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items, 'refund': ' '},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -1447,6 +1593,7 @@ class CreateTransactionTestCase(APITestCase):
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items, 'refund': '1'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -1457,6 +1604,7 @@ class CreateTransactionTestCase(APITestCase):
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items, 'refund': '0'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -1467,6 +1615,7 @@ class CreateTransactionTestCase(APITestCase):
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items, 'refund': '-1'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -1477,6 +1626,7 @@ class CreateTransactionTestCase(APITestCase):
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items, 'refund': '1.1'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -1487,6 +1637,7 @@ class CreateTransactionTestCase(APITestCase):
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items, 'refund': '-1.1'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -1497,6 +1648,7 @@ class CreateTransactionTestCase(APITestCase):
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items, 'refund': 'Text'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -1507,6 +1659,7 @@ class CreateTransactionTestCase(APITestCase):
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items, 'refund': 1},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -1517,6 +1670,7 @@ class CreateTransactionTestCase(APITestCase):
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items, 'refund': 0},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -1527,6 +1681,7 @@ class CreateTransactionTestCase(APITestCase):
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items, 'refund': -1},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -1537,6 +1692,7 @@ class CreateTransactionTestCase(APITestCase):
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items, 'refund': 1.1},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -1547,6 +1703,7 @@ class CreateTransactionTestCase(APITestCase):
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items, 'refund': -1.1},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -1557,6 +1714,7 @@ class CreateTransactionTestCase(APITestCase):
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items, 'refund': None},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -1567,6 +1725,7 @@ class CreateTransactionTestCase(APITestCase):
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items, 'refund': list()},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -1577,6 +1736,7 @@ class CreateTransactionTestCase(APITestCase):
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items, 'refund': tuple()},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -1587,6 +1747,7 @@ class CreateTransactionTestCase(APITestCase):
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items, 'refund': dict()},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -1597,6 +1758,7 @@ class CreateTransactionTestCase(APITestCase):
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items, 'refund': set()},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -1609,6 +1771,7 @@ class CreateTransactionTestCase(APITestCase):
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items, 'adjustment': True},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 1)
         self.assertEqual(SoldItem.objects.count(), 4)
@@ -1622,6 +1785,7 @@ class CreateTransactionTestCase(APITestCase):
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items, 'adjustment': False},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 2)
         self.assertEqual(SoldItem.objects.count(), 8)
@@ -1637,6 +1801,7 @@ class CreateTransactionTestCase(APITestCase):
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items, 'adjustment': ''},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -1647,6 +1812,7 @@ class CreateTransactionTestCase(APITestCase):
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items, 'adjustment': '1'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -1657,6 +1823,7 @@ class CreateTransactionTestCase(APITestCase):
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items, 'adjustment': '0'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -1667,6 +1834,7 @@ class CreateTransactionTestCase(APITestCase):
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items, 'adjustment': '-1'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -1677,6 +1845,7 @@ class CreateTransactionTestCase(APITestCase):
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items, 'adjustment': '1.1'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -1687,6 +1856,7 @@ class CreateTransactionTestCase(APITestCase):
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items, 'adjustment': '-1.1'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -1697,6 +1867,7 @@ class CreateTransactionTestCase(APITestCase):
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items, 'adjustment': 'Text'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -1707,6 +1878,7 @@ class CreateTransactionTestCase(APITestCase):
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items, 'adjustment': 1},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -1717,6 +1889,7 @@ class CreateTransactionTestCase(APITestCase):
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items, 'adjustment': 0},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -1727,6 +1900,7 @@ class CreateTransactionTestCase(APITestCase):
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items, 'adjustment': -1},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -1737,6 +1911,7 @@ class CreateTransactionTestCase(APITestCase):
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items, 'adjustment': 1.1},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -1747,6 +1922,7 @@ class CreateTransactionTestCase(APITestCase):
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items, 'adjustment': -1.1},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -1757,6 +1933,7 @@ class CreateTransactionTestCase(APITestCase):
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items, 'adjustment': None},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -1767,6 +1944,7 @@ class CreateTransactionTestCase(APITestCase):
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items, 'adjustment': list()},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -1777,6 +1955,7 @@ class CreateTransactionTestCase(APITestCase):
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items, 'adjustment': tuple()},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -1787,6 +1966,7 @@ class CreateTransactionTestCase(APITestCase):
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items, 'adjustment': dict()},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)
@@ -1797,6 +1977,7 @@ class CreateTransactionTestCase(APITestCase):
                                                            'marketplace_name': self.marketplace.name,
                                                            'country_code': 'PL', 'items': items, 'adjustment': set()},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Transaction.objects.count(), 0)
         self.assertEqual(SoldItem.objects.count(), 0)

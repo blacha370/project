@@ -1,10 +1,13 @@
 from django.test import TestCase
+from django.contrib.auth.models import User
 from ...models import Address, Company, Customer, Tax, Item, SoldItem, Transaction, Marketplace, Receipt, Invoice, \
     AdvanceInvoice
 
 
 class AdvanceInvoiceTestCase(TestCase):
     def setUp(self):
+        self.user = User(username='test', password='test')
+        self.user.save()
         company_address = Address.create(country='Poland', city='Warsaw', postal_code='10-100', street='Street',
                                          building_number=3, apartment_number=5)
         customer_address = Address.create(country='Poland', city='Cracow', postal_code='20-002', street='Street',
@@ -36,7 +39,7 @@ class AdvanceInvoiceTestCase(TestCase):
         self.invoice = Invoice.create(receipt=self.receipt)
 
     def test_create_advance_invoice(self):
-        advance_invoice = AdvanceInvoice.create(invoice=self.invoice, payment=100)
+        advance_invoice = AdvanceInvoice.create(invoice=self.invoice, payment=100, user=self.user)
         self.assertIsInstance(advance_invoice, AdvanceInvoice)
         self.assertEqual(advance_invoice.invoice, self.invoice)
         self.assertEqual(advance_invoice.advance_invoice_id, self.invoice.invoice_id + '-01')
@@ -48,21 +51,21 @@ class AdvanceInvoiceTestCase(TestCase):
         self.assertEqual(AdvanceInvoice.objects.count(), 0)
 
     def test_create_advance_invoices_until_invoice_is_ended(self):
-        advance_invoice = AdvanceInvoice.create(invoice=self.invoice, payment=100)
+        advance_invoice = AdvanceInvoice.create(invoice=self.invoice, payment=100, user=self.user)
         self.assertIsInstance(advance_invoice, AdvanceInvoice)
         self.assertEqual(advance_invoice.advance_invoice_id, self.invoice.invoice_id + '-01')
         self.assertEqual(advance_invoice.invoice, self.invoice)
         self.assertEqual(advance_invoice.payment, 100)
         self.assertEqual(AdvanceInvoice.objects.count(), 1)
 
-        advance_invoice = AdvanceInvoice.create(invoice=self.invoice, payment=100)
+        advance_invoice = AdvanceInvoice.create(invoice=self.invoice, payment=100, user=self.user)
         self.assertIsInstance(advance_invoice, AdvanceInvoice)
         self.assertEqual(advance_invoice.advance_invoice_id, self.invoice.invoice_id + '-02')
         self.assertEqual(advance_invoice.invoice, self.invoice)
         self.assertEqual(advance_invoice.payment, 100)
         self.assertEqual(AdvanceInvoice.objects.count(), 2)
 
-        advance_invoice = AdvanceInvoice.create(invoice=self.invoice, payment=38.75)
+        advance_invoice = AdvanceInvoice.create(invoice=self.invoice, payment=38.75, user=self.user)
         self.assertIsInstance(advance_invoice, AdvanceInvoice)
         self.assertEqual(advance_invoice.advance_invoice_id, self.invoice.invoice_id + '-03')
         self.assertEqual(advance_invoice.invoice, self.invoice)
@@ -72,76 +75,76 @@ class AdvanceInvoiceTestCase(TestCase):
         self.assertIsNotNone(self.invoice.time)
 
     def test_create_advance_invoice_for_ended_invoice(self):
-        self.invoice.end_invoice()
-        self.assertRaises(TypeError, AdvanceInvoice.create, invoice=self.invoice, payment=100)
+        self.invoice.end_invoice(user=self.user)
+        self.assertRaises(TypeError, AdvanceInvoice.create, invoice=self.invoice, payment=100, user=self.user)
         self.assertEqual(AdvanceInvoice.objects.count(), 0)
 
     def test_create_advance_invoice_with_not_Invoice_as_invoice(self):
-        self.assertRaises(TypeError, AdvanceInvoice.create, invoice='', payment=100)
+        self.assertRaises(TypeError, AdvanceInvoice.create, invoice='', payment=100, user=self.user)
 
-        self.assertRaises(TypeError, AdvanceInvoice.create, invoice=' ', payment=100)
+        self.assertRaises(TypeError, AdvanceInvoice.create, invoice=' ', payment=100, user=self.user)
 
-        self.assertRaises(TypeError, AdvanceInvoice.create, invoice='1', payment=100)
+        self.assertRaises(TypeError, AdvanceInvoice.create, invoice='1', payment=100, user=self.user)
 
-        self.assertRaises(TypeError, AdvanceInvoice.create, invoice='0', payment=100)
+        self.assertRaises(TypeError, AdvanceInvoice.create, invoice='0', payment=100, user=self.user)
 
-        self.assertRaises(TypeError, AdvanceInvoice.create, invoice='-1', payment=100)
+        self.assertRaises(TypeError, AdvanceInvoice.create, invoice='-1', payment=100, user=self.user)
 
-        self.assertRaises(TypeError, AdvanceInvoice.create, invoice='1.1', payment=100)
+        self.assertRaises(TypeError, AdvanceInvoice.create, invoice='1.1', payment=100, user=self.user)
 
-        self.assertRaises(TypeError, AdvanceInvoice.create, invoice='-1.1', payment=100)
+        self.assertRaises(TypeError, AdvanceInvoice.create, invoice='-1.1', payment=100, user=self.user)
 
-        self.assertRaises(TypeError, AdvanceInvoice.create, invoice='Text', payment=100)
+        self.assertRaises(TypeError, AdvanceInvoice.create, invoice='Text', payment=100, user=self.user)
 
-        self.assertRaises(TypeError, AdvanceInvoice.create, invoice=1, payment=100)
+        self.assertRaises(TypeError, AdvanceInvoice.create, invoice=1, payment=100, user=self.user)
 
-        self.assertRaises(TypeError, AdvanceInvoice.create, invoice=0, payment=100)
+        self.assertRaises(TypeError, AdvanceInvoice.create, invoice=0, payment=100, user=self.user)
 
-        self.assertRaises(TypeError, AdvanceInvoice.create, invoice=-1, payment=100)
+        self.assertRaises(TypeError, AdvanceInvoice.create, invoice=-1, payment=100, user=self.user)
 
-        self.assertRaises(TypeError, AdvanceInvoice.create, invoice=1.1, payment=100)
+        self.assertRaises(TypeError, AdvanceInvoice.create, invoice=1.1, payment=100, user=self.user)
 
-        self.assertRaises(TypeError, AdvanceInvoice.create, invoice=-1.1, payment=100)
+        self.assertRaises(TypeError, AdvanceInvoice.create, invoice=-1.1, payment=100, user=self.user)
 
-        self.assertRaises(TypeError, AdvanceInvoice.create, invoice=True, payment=100)
+        self.assertRaises(TypeError, AdvanceInvoice.create, invoice=True, payment=100, user=self.user)
 
-        self.assertRaises(TypeError, AdvanceInvoice.create, invoice=False, payment=100)
+        self.assertRaises(TypeError, AdvanceInvoice.create, invoice=False, payment=100, user=self.user)
 
-        self.assertRaises(TypeError, AdvanceInvoice.create, invoice=None, payment=100)
+        self.assertRaises(TypeError, AdvanceInvoice.create, invoice=None, payment=100, user=self.user)
 
-        self.assertRaises(TypeError, AdvanceInvoice.create, invoice=list(), payment=100)
+        self.assertRaises(TypeError, AdvanceInvoice.create, invoice=list(), payment=100, user=self.user)
 
-        self.assertRaises(TypeError, AdvanceInvoice.create, invoice=dict(), payment=100)
+        self.assertRaises(TypeError, AdvanceInvoice.create, invoice=dict(), payment=100, user=self.user)
 
-        self.assertRaises(TypeError, AdvanceInvoice.create, invoice=tuple(), payment=100)
+        self.assertRaises(TypeError, AdvanceInvoice.create, invoice=tuple(), payment=100, user=self.user)
 
-        self.assertRaises(TypeError, AdvanceInvoice.create, invoice=set(), payment=100)
+        self.assertRaises(TypeError, AdvanceInvoice.create, invoice=set(), payment=100, user=self.user)
         self.assertEqual(AdvanceInvoice.objects.count(), 0)
 
     def test_create_invoice_with_not_int_or_float_as_payment(self):
-        self.assertRaises(TypeError, AdvanceInvoice.create, invoice=self.invoice, payment='')
+        self.assertRaises(TypeError, AdvanceInvoice.create, invoice=self.invoice, payment='', user=self.user)
 
-        self.assertRaises(TypeError, AdvanceInvoice.create, invoice=self.invoice, payment=' ')
+        self.assertRaises(TypeError, AdvanceInvoice.create, invoice=self.invoice, payment=' ', user=self.user)
 
-        self.assertRaises(TypeError, AdvanceInvoice.create, invoice=self.invoice, payment='1')
+        self.assertRaises(TypeError, AdvanceInvoice.create, invoice=self.invoice, payment='1', user=self.user)
 
-        self.assertRaises(TypeError, AdvanceInvoice.create, invoice=self.invoice, payment='0')
+        self.assertRaises(TypeError, AdvanceInvoice.create, invoice=self.invoice, payment='0', user=self.user)
 
-        self.assertRaises(TypeError, AdvanceInvoice.create, invoice=self.invoice, payment='-1')
+        self.assertRaises(TypeError, AdvanceInvoice.create, invoice=self.invoice, payment='-1', user=self.user)
 
-        self.assertRaises(TypeError, AdvanceInvoice.create, invoice=self.invoice, payment='Text')
+        self.assertRaises(TypeError, AdvanceInvoice.create, invoice=self.invoice, payment='Text', user=self.user)
 
-        self.assertRaises(TypeError, AdvanceInvoice.create, invoice=self.invoice, payment=True)
+        self.assertRaises(TypeError, AdvanceInvoice.create, invoice=self.invoice, payment=True, user=self.user)
 
-        self.assertRaises(TypeError, AdvanceInvoice.create, invoice=self.invoice, payment=False)
+        self.assertRaises(TypeError, AdvanceInvoice.create, invoice=self.invoice, payment=False, user=self.user)
 
-        self.assertRaises(TypeError, AdvanceInvoice.create, invoice=self.invoice, payment=None)
+        self.assertRaises(TypeError, AdvanceInvoice.create, invoice=self.invoice, payment=None, user=self.user)
 
-        self.assertRaises(TypeError, AdvanceInvoice.create, invoice=self.invoice, payment=list())
+        self.assertRaises(TypeError, AdvanceInvoice.create, invoice=self.invoice, payment=list(), user=self.user)
 
-        self.assertRaises(TypeError, AdvanceInvoice.create, invoice=self.invoice, payment=tuple())
+        self.assertRaises(TypeError, AdvanceInvoice.create, invoice=self.invoice, payment=tuple(), user=self.user)
 
-        self.assertRaises(TypeError, AdvanceInvoice.create, invoice=self.invoice, payment=dict())
+        self.assertRaises(TypeError, AdvanceInvoice.create, invoice=self.invoice, payment=dict(), user=self.user)
 
-        self.assertRaises(TypeError, AdvanceInvoice.create, invoice=self.invoice, payment=set())
+        self.assertRaises(TypeError, AdvanceInvoice.create, invoice=self.invoice, payment=set(), user=self.user)
         self.assertEqual(AdvanceInvoice.objects.count(), 0)

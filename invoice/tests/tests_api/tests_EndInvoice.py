@@ -1,4 +1,5 @@
 from rest_framework.test import APITestCase, APIRequestFactory
+from django.contrib.auth.models import User
 from ...views import (EndInvoice, AdvanceInvoice, Invoice, Receipt, Transaction, Company, Customer, Marketplace,
                       SoldItem, Item, Tax, Address)
 
@@ -7,6 +8,8 @@ class EndInvoiceTestCase(APITestCase):
     def setUp(self):
         self.factory = APIRequestFactory()
         self.view = EndInvoice.as_view()
+        self.user = User(username='test', password='test')
+        self.user.save()
         address = Address.create(country='Country', city='City', postal_code='11-222', street='Street',
                                  building_number=1)
         self.company = Company.create(name='Company', address=address)
@@ -32,15 +35,17 @@ class EndInvoiceTestCase(APITestCase):
     def test_end_invoice(self):
         self.assertFalse(self.invoice.ended)
         request = self.factory.post('end_invoice', {'invoice_id': self.invoice.invoice_id}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'OK')
         self.assertEqual(response.data['invoice']['invoice_id'], self.invoice.invoice_id)
         self.assertTrue(Invoice.objects.get(invoice_id=self.invoice.invoice_id).ended)
 
     def test_end_invoice_with_advance_invoices(self):
-        AdvanceInvoice.create(invoice=self.invoice, payment=10)
+        AdvanceInvoice.create(invoice=self.invoice, payment=10, user=self.user)
         self.assertFalse(self.invoice.ended)
         request = self.factory.post('end_invoice', {'invoice_id': self.invoice.invoice_id}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'OK')
         self.assertEqual(response.data['invoice']['invoice_id'], self.invoice.invoice_id)
@@ -50,85 +55,101 @@ class EndInvoiceTestCase(APITestCase):
     def test_end_invoice_twice(self):
         self.assertFalse(self.invoice.ended)
         request = self.factory.post('end_invoice', {'invoice_id': self.invoice.invoice_id}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'OK')
         self.assertEqual(response.data['invoice']['invoice_id'], self.invoice.invoice_id)
         self.assertTrue(Invoice.objects.get(invoice_id=self.invoice.invoice_id).ended)
 
         request = self.factory.post('end_invoice', {'invoice_id': self.invoice.invoice_id}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Invoice is already ended')
 
     def test_end_invoice_with_not_string_as_invoice_id(self):
         request = self.factory.post('end_invoice', {'invoice_id': 1}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Invoice with provided invoice_id does not exist')
 
         request = self.factory.post('end_invoice', {'invoice_id': 0}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Invoice with provided invoice_id does not exist')
 
         request = self.factory.post('end_invoice', {'invoice_id': -1}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Invoice with provided invoice_id does not exist')
 
         request = self.factory.post('end_invoice', {'invoice_id': 1.1}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Invoice with provided invoice_id does not exist')
 
         request = self.factory.post('end_invoice', {'invoice_id': -1.1}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Invoice with provided invoice_id does not exist')
 
         request = self.factory.post('end_invoice', {'invoice_id': True}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Invoice with provided invoice_id does not exist')
 
         request = self.factory.post('end_invoice', {'invoice_id': False}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Invoice with provided invoice_id does not exist')
 
         request = self.factory.post('end_invoice', {'invoice_id': None}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Invoice with provided invoice_id does not exist')
 
         request = self.factory.post('end_invoice', {'invoice_id': list()}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Invoice with provided invoice_id does not exist')
 
         request = self.factory.post('end_invoice', {'invoice_id': tuple()}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Invoice with provided invoice_id does not exist')
 
         request = self.factory.post('end_invoice', {'invoice_id': dict()}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Invoice with provided invoice_id does not exist')
 
         request = self.factory.post('end_invoice', {'invoice_id': set()}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Invoice with provided invoice_id does not exist')
 
     def test_end_invoice_with_empty_string_as_invoice_id(self):
         request = self.factory.post('end_invoice', {'invoice_id': ''}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Invoice with provided invoice_id does not exist')
 
     def test_end_invoice_without_invoice_id(self):
         request = self.factory.post('end_invoice', {}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'missing argument: invoice_id')

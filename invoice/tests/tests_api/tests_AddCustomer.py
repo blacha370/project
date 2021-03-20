@@ -1,16 +1,20 @@
-from rest_framework.test import APITestCase, APIRequestFactory
+from rest_framework.test import APITestCase, APIRequestFactory, force_authenticate
 from ...views import AddCustomer, Customer, Address
+from django.contrib.auth.models import User
 
 
 class AddCustomerTestCase(APITestCase):
     def setUp(self):
         self.factory = APIRequestFactory()
         self.view = AddCustomer.as_view()
+        self.user = User(username='test', password='test')
+        self.user.save()
 
     def test_add_customer(self):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'postal_code': '00-000',
                                                      'street': 'Street', 'building_number': 1, 'apartment_number': 2,
                                                      'name': 'Customer name'}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Customer.objects.count(), 1)
         self.assertEqual(Address.objects.count(), 1)
@@ -36,6 +40,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'postal_code': '00-000',
                                                      'street': 'Street', 'building_number': 1, 'name': 'Customer name'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Customer.objects.count(), 1)
         self.assertEqual(Address.objects.count(), 1)
@@ -61,6 +66,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'postal_code': '00-000',
                                                      'street': 'Street', 'building_number': 1, 'name': 'Customer name'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Customer.objects.count(), 1)
         self.assertEqual(Address.objects.count(), 1)
@@ -85,6 +91,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'postal_code': '00-000',
                                                      'street': 'Street', 'building_number': 2, 'name': 'Customer name'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Customer.objects.count(), 2)
         self.assertEqual(Address.objects.count(), 2)
@@ -110,6 +117,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'postal_code': '00-000',
                                                      'street': 'Street', 'building_number': 1, 'name': 'Customer name'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Customer.objects.count(), 1)
         self.assertEqual(Address.objects.count(), 1)
@@ -134,6 +142,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'postal_code': '00-000',
                                                      'street': 'Street', 'building_number': 1,
                                                      'name': 'Second customer name'}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Customer.objects.count(), 2)
         self.assertEqual(Address.objects.count(), 2)
@@ -159,6 +168,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'postal_code': '00-000',
                                                      'street': 'Street', 'building_number': 1, 'name': 'Customer name'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Customer.objects.count(), 1)
         self.assertEqual(Address.objects.count(), 1)
@@ -183,6 +193,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'postal_code': '00-000',
                                                      'street': 'Street', 'building_number': 1, 'name': 'Customer name'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Customer.objects.count(), 1)
         self.assertEqual(Address.objects.count(), 1)
@@ -210,6 +221,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 1, 'city': 'City', 'postal_code': '00-000',
                                                      'street': 'Street', 'building_number': 1, 'name': 'Customer name'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Country error')
@@ -219,6 +231,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 0, 'city': 'City', 'postal_code': '00-000',
                                                      'street': 'Street', 'building_number': 1, 'name': 'Customer name'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Country error')
@@ -228,6 +241,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': -1, 'city': 'City', 'postal_code': '00-000',
                                                      'street': 'Street', 'building_number': 1, 'name': 'Customer name'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Country error')
@@ -237,6 +251,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 1.1, 'city': 'City', 'postal_code': '00-000',
                                                      'street': 'Street', 'building_number': 1, 'name': 'Customer name'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Country error')
@@ -246,6 +261,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 1.1, 'city': 'City', 'postal_code': '00-000',
                                                      'street': 'Street', 'building_number': 1, 'name': 'Customer name'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Country error')
@@ -255,6 +271,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': True, 'city': 'City', 'postal_code': '00-000',
                                                      'street': 'Street', 'building_number': 1, 'name': 'Customer name'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Country error')
@@ -264,6 +281,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': False, 'city': 'City', 'postal_code': '00-000',
                                                      'street': 'Street', 'building_number': 1, 'name': 'Customer name'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Country error')
@@ -273,6 +291,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': None, 'city': 'City', 'postal_code': '00-000',
                                                      'street': 'Street', 'building_number': 1, 'name': 'Customer name'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Country error')
@@ -282,6 +301,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': list(), 'city': 'City', 'postal_code': '00-000',
                                                      'street': 'Street', 'building_number': 1, 'name': 'Customer name'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Country error')
@@ -291,6 +311,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': tuple(), 'city': 'City', 'postal_code': '00-000',
                                                      'street': 'Street', 'building_number': 1, 'name': 'Customer name'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Country error')
@@ -300,6 +321,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': dict(), 'city': 'City', 'postal_code': '00-000',
                                                      'street': 'Street', 'building_number': 1, 'name': 'Customer name'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Country error')
@@ -309,6 +331,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': set(), 'city': 'City', 'postal_code': '00-000',
                                                      'street': 'Street', 'building_number': 1, 'name': 'Customer name'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Country error')
@@ -319,6 +342,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': '1' * 51, 'city': 'City', 'postal_code': '00-000',
                                                      'street': 'Street', 'building_number': 1, 'name': 'Customer name'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Country error')
@@ -329,6 +353,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': '', 'city': 'City', 'postal_code': '00-000',
                                                      'street': 'Street', 'building_number': 1, 'name': 'Customer name'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Country error')
@@ -338,6 +363,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': ' ', 'city': 'City', 'postal_code': '00-000',
                                                      'street': 'Street', 'building_number': 1, 'name': 'Customer name'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Country error')
@@ -348,6 +374,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 1, 'postal_code': '00-000',
                                                      'street': 'Street', 'building_number': 1, 'name': 'Customer name'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'City error')
@@ -357,6 +384,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 0, 'postal_code': '00-000',
                                                      'street': 'Street', 'building_number': 1, 'name': 'Customer name'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'City error')
@@ -366,6 +394,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': -1, 'postal_code': '00-000',
                                                      'street': 'Street', 'building_number': 1, 'name': 'Customer name'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'City error')
@@ -375,6 +404,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 1.1, 'postal_code': '00-000',
                                                      'street': 'Street', 'building_number': 1, 'name': 'Customer name'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'City error')
@@ -384,6 +414,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': -1.1, 'postal_code': '00-000',
                                                      'street': 'Street', 'building_number': 1, 'name': 'Customer name'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'City error')
@@ -393,6 +424,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': True, 'postal_code': '00-000',
                                                      'street': 'Street', 'building_number': 1, 'name': 'Customer name'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'City error')
@@ -402,6 +434,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': False, 'postal_code': '00-000',
                                                      'street': 'Street', 'building_number': 1, 'name': 'Customer name'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'City error')
@@ -411,6 +444,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': None, 'postal_code': '00-000',
                                                      'street': 'Street', 'building_number': 1, 'name': 'Customer name'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'City error')
@@ -420,6 +454,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': list(), 'postal_code': '00-000',
                                                      'street': 'Street', 'building_number': 1, 'name': 'Customer name'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'City error')
@@ -429,6 +464,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': tuple(), 'postal_code': '00-000',
                                                      'street': 'Street', 'building_number': 1, 'name': 'Customer name'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'City error')
@@ -438,6 +474,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': dict(), 'postal_code': '00-000',
                                                      'street': 'Street', 'building_number': 1, 'name': 'Customer name'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'City error')
@@ -447,6 +484,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': set(), 'postal_code': '00-000',
                                                      'street': 'Street', 'building_number': 1, 'name': 'Customer name'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'City error')
@@ -457,6 +495,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': '1' * 101, 'postal_code': '00-000',
                                                      'street': 'Street', 'building_number': 1, 'name': 'Customer name'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'City error')
@@ -467,6 +506,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': '', 'postal_code': '00-000',
                                                      'street': 'Street', 'building_number': 1, 'name': 'Customer name'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'City error')
@@ -476,6 +516,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': ' ', 'postal_code': '00-000',
                                                      'street': 'Street', 'building_number': 1, 'name': 'Customer name'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'City error')
@@ -486,6 +527,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'postal_code': 1,
                                                      'street': 'Street', 'building_number': 1, 'name': 'Customer name'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Postal code error')
@@ -495,6 +537,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'postal_code': 0,
                                                      'street': 'Street', 'building_number': 1, 'name': 'Customer name'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Postal code error')
@@ -504,6 +547,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'postal_code': -1,
                                                      'street': 'Street', 'building_number': 1, 'name': 'Customer name'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Postal code error')
@@ -513,6 +557,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'postal_code': 1.1,
                                                      'street': 'Street', 'building_number': 1, 'name': 'Customer name'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Postal code error')
@@ -522,6 +567,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'postal_code': -1.1,
                                                      'street': 'Street', 'building_number': 1, 'name': 'Customer name'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Postal code error')
@@ -531,6 +577,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'postal_code': True,
                                                      'street': 'Street', 'building_number': 1, 'name': 'Customer name'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Postal code error')
@@ -540,6 +587,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'postal_code': False,
                                                      'street': 'Street', 'building_number': 1, 'name': 'Customer name'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Postal code error')
@@ -549,6 +597,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'postal_code': None,
                                                      'street': 'Street', 'building_number': 1, 'name': 'Customer name'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Postal code error')
@@ -558,6 +607,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'postal_code': list(),
                                                      'street': 'Street', 'building_number': 1, 'name': 'Customer name'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Postal code error')
@@ -567,6 +617,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'postal_code': tuple(),
                                                      'street': 'Street', 'building_number': 1, 'name': 'Customer name'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Postal code error')
@@ -576,6 +627,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'postal_code': dict(),
                                                      'street': 'Street', 'building_number': 1, 'name': 'Customer name'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Postal code error')
@@ -585,6 +637,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'postal_code': set(),
                                                      'street': 'Street', 'building_number': 1, 'name': 'Customer name'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Postal code error')
@@ -595,6 +648,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'postal_code': '1' * 7,
                                                      'street': 'Street', 'building_number': 1, 'name': 'Customer name'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Postal code error')
@@ -605,6 +659,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'postal_code': '',
                                                      'street': 'Street', 'building_number': 1, 'name': 'Customer name'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Postal code error')
@@ -614,6 +669,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'postal_code': ' ',
                                                      'street': 'Street', 'building_number': 1, 'name': 'Customer name'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Postal code error')
@@ -624,6 +680,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'postal_code': '00-000',
                                                      'street': 1, 'building_number': 1, 'name': 'Customer name'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Street error')
@@ -633,6 +690,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'postal_code': '00-000',
                                                      'street': 0, 'building_number': 1, 'name': 'Customer name'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Street error')
@@ -642,6 +700,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'postal_code': '00-000',
                                                      'street': -1, 'building_number': 1, 'name': 'Customer name'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Street error')
@@ -651,6 +710,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'postal_code': '00-000',
                                                      'street': 1.1, 'building_number': 1, 'name': 'Customer name'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Street error')
@@ -660,6 +720,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'postal_code': '00-000',
                                                      'street': -1.1, 'building_number': 1, 'name': 'Customer name'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Street error')
@@ -669,6 +730,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'postal_code': '00-000',
                                                      'street': True, 'building_number': 1, 'name': 'Customer name'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Street error')
@@ -678,6 +740,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'postal_code': '00-000',
                                                      'street': False, 'building_number': 1, 'name': 'Customer name'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Street error')
@@ -687,6 +750,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'postal_code': '00-000',
                                                      'street': None, 'building_number': 1, 'name': 'Customer name'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Street error')
@@ -696,6 +760,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'postal_code': '00-000',
                                                      'street': list(), 'building_number': 1, 'name': 'Customer name'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Street error')
@@ -705,6 +770,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'postal_code': '00-000',
                                                      'street': tuple(), 'building_number': 1, 'name': 'Customer name'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Street error')
@@ -714,6 +780,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'postal_code': '00-000',
                                                      'street': dict(), 'building_number': 1, 'name': 'Customer name'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Street error')
@@ -723,6 +790,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'postal_code': '00-000',
                                                      'street': set(), 'building_number': 1, 'name': 'Customer name'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Street error')
@@ -733,6 +801,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'postal_code': '00-000',
                                                      'street': '1' * 101, 'building_number': 1, 'name':
                                                          'Customer name'}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Street error')
@@ -743,6 +812,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'postal_code': '00-000',
                                                      'street': '', 'building_number': 1, 'name': 'Customer name'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Street error')
@@ -752,6 +822,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'postal_code': '00-000',
                                                      'street': ' ', 'building_number': 1, 'name': 'Customer name'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Street error')
@@ -762,6 +833,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'postal_code': '00-000',
                                                      'street': 'Street', 'building_number': '',
                                                      'name': 'Customer name'}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Building number error')
@@ -771,6 +843,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'postal_code': '00-000',
                                                      'street': 'Street', 'building_number': ' ',
                                                      'name': 'Customer name'}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Building number error')
@@ -780,6 +853,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'postal_code': '00-000',
                                                      'street': 'Street', 'building_number': '1',
                                                      'name': 'Customer name'}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Building number error')
@@ -789,6 +863,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'postal_code': '00-000',
                                                      'street': 'Street', 'building_number': '0',
                                                      'name': 'Customer name'}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Building number error')
@@ -798,6 +873,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'postal_code': '00-000',
                                                      'street': 'Street', 'building_number': '-1',
                                                      'name': 'Customer name'}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Building number error')
@@ -807,6 +883,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'postal_code': '00-000',
                                                      'street': 'Street', 'building_number': '1.1',
                                                      'name': 'Customer name'}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Building number error')
@@ -816,6 +893,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'postal_code': '00-000',
                                                      'street': 'Street', 'building_number': '-1.1',
                                                      'name': 'Customer name'}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Building number error')
@@ -825,6 +903,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'postal_code': '00-000',
                                                      'street': 'Street', 'building_number': 'Text',
                                                      'name': 'Customer name'}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Building number error')
@@ -834,6 +913,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'postal_code': '00-000',
                                                      'street': 'Street', 'building_number': 1.1,
                                                      'name': 'Customer name'}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Building number error')
@@ -843,6 +923,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'postal_code': '00-000',
                                                      'street': 'Street', 'building_number': -1.1,
                                                      'name': 'Customer name'}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Building number error')
@@ -852,6 +933,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'postal_code': '00-000',
                                                      'street': 'Street', 'building_number': True,
                                                      'name': 'Customer name'}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Building number error')
@@ -861,6 +943,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'postal_code': '00-000',
                                                      'street': 'Street', 'building_number': False,
                                                      'name': 'Customer name'}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Building number error')
@@ -870,6 +953,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'postal_code': '00-000',
                                                      'street': 'Street', 'building_number': None,
                                                      'name': 'Customer name'}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Building number error')
@@ -879,6 +963,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'postal_code': '00-000',
                                                      'street': 'Street', 'building_number': list(),
                                                      'name': 'Customer name'}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Building number error')
@@ -888,6 +973,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'postal_code': '00-000',
                                                      'street': 'Street', 'building_number': tuple(),
                                                      'name': 'Customer name'}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Building number error')
@@ -897,6 +983,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'postal_code': '00-000',
                                                      'street': 'Street', 'building_number': dict(),
                                                      'name': 'Customer name'}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Building number error')
@@ -906,6 +993,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'postal_code': '00-000',
                                                      'street': 'Street', 'building_number': set(),
                                                      'name': 'Customer name'}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Building number error')
@@ -916,6 +1004,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'postal_code': '00-000',
                                                      'street': 'Street', 'building_number': -1,
                                                      'name': 'Customer name'}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Building number error')
@@ -925,6 +1014,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'postal_code': '00-000',
                                                      'street': 'Street', 'building_number': 0,
                                                      'name': 'Customer name'}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Building number error')
@@ -935,6 +1025,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'postal_code': '00-000',
                                                      'street': 'Street', 'building_number': 1, 'apartment_number': '',
                                                      'name': 'Customer name'}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Apartment number error')
@@ -944,6 +1035,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'postal_code': '00-000',
                                                      'street': 'Street', 'building_number': 1, 'apartment_number': ' ',
                                                      'name': 'Customer name'}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Apartment number error')
@@ -953,6 +1045,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'postal_code': '00-000',
                                                      'street': 'Street', 'building_number': 1, 'apartment_number': '1',
                                                      'name': 'Customer name'}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Apartment number error')
@@ -962,6 +1055,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'postal_code': '00-000',
                                                      'street': 'Street', 'building_number': 1, 'apartment_number': '0',
                                                      'name': 'Customer name'}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Apartment number error')
@@ -971,6 +1065,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'postal_code': '00-000',
                                                      'street': 'Street', 'building_number': 1, 'apartment_number': '-1',
                                                      'name': 'Customer name'}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Apartment number error')
@@ -980,6 +1075,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'postal_code': '00-000',
                                                      'street': 'Street', 'building_number': 1,
                                                      'apartment_number': '1.1', 'name': 'Customer name'}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Apartment number error')
@@ -990,6 +1086,7 @@ class AddCustomerTestCase(APITestCase):
                                                      'street': 'Street', 'building_number': 1,
                                                      'apartment_number': '-1.1', 'name': 'Customer name'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Apartment number error')
@@ -1000,6 +1097,7 @@ class AddCustomerTestCase(APITestCase):
                                                      'street': 'Street', 'building_number': 1,
                                                      'apartment_number': 'Text', 'name': 'Customer name'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Apartment number error')
@@ -1009,6 +1107,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'postal_code': '00-000',
                                                      'street': 'Street', 'building_number': 1, 'apartment_number': 1.1,
                                                      'name': 'Customer name'}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Apartment number error')
@@ -1018,6 +1117,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'postal_code': '00-000',
                                                      'street': 'Street', 'building_number': 1, 'apartment_number': -1.1,
                                                      'name': 'Customer name'}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Apartment number error')
@@ -1027,6 +1127,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'postal_code': '00-000',
                                                      'street': 'Street', 'building_number': 1, 'apartment_number': True,
                                                      'name': 'Customer name'}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Apartment number error')
@@ -1036,6 +1137,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'postal_code': '00-000',
                                                      'street': 'Street', 'building_number': 1,
                                                      'apartment_number': False, 'name': 'Customer name'}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Apartment number error')
@@ -1046,6 +1148,7 @@ class AddCustomerTestCase(APITestCase):
                                                      'street': 'Street', 'building_number': 1,
                                                      'apartment_number': list(), 'name': 'Customer name'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Apartment number error')
@@ -1056,6 +1159,7 @@ class AddCustomerTestCase(APITestCase):
                                                      'street': 'Street', 'building_number': 1,
                                                      'apartment_number': tuple(), 'name': 'Customer name'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Apartment number error')
@@ -1066,6 +1170,7 @@ class AddCustomerTestCase(APITestCase):
                                                      'street': 'Street', 'building_number': 1,
                                                      'apartment_number': dict(), 'name': 'Customer name'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Apartment number error')
@@ -1075,6 +1180,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'postal_code': '00-000',
                                                      'street': 'Street', 'building_number': 1,
                                                      'apartment_number': set(), 'name': 'Customer name'}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Apartment number error')
@@ -1085,6 +1191,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'postal_code': '00-000',
                                                      'street': 'Street', 'building_number': 1, 'apartment_number': -1,
                                                      'name': 'Customer name'}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Apartment number error')
@@ -1094,6 +1201,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'postal_code': '00-000',
                                                      'street': 'Street', 'building_number': 1, 'apartment_number': 0,
                                                      'name': 'Customer name'}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Apartment number error')
@@ -1104,6 +1212,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'postal_code': '00-000',
                                                      'street': 'Street', 'building_number': 1, 'name': 1},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Name error')
@@ -1113,6 +1222,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'postal_code': '00-000',
                                                      'street': 'Street', 'building_number': 1, 'name': 0},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Name error')
@@ -1122,6 +1232,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'postal_code': '00-000',
                                                      'street': 'Street', 'building_number': 1, 'name': -1},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Name error')
@@ -1131,6 +1242,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'postal_code': '00-000',
                                                      'street': 'Street', 'building_number': 1, 'name': 1.1},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Name error')
@@ -1140,6 +1252,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'postal_code': '00-000',
                                                      'street': 'Street', 'building_number': 1, 'name': -1.1},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Name error')
@@ -1149,6 +1262,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'postal_code': '00-000',
                                                      'street': 'Street', 'building_number': 1, 'name': True},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Name error')
@@ -1158,6 +1272,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'postal_code': '00-000',
                                                      'street': 'Street', 'building_number': 1, 'name': False},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Name error')
@@ -1167,6 +1282,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'postal_code': '00-000',
                                                      'street': 'Street', 'building_number': 1, 'name': None},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Name error')
@@ -1176,6 +1292,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'postal_code': '00-000',
                                                      'street': 'Street', 'building_number': 1, 'name': list()},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Name error')
@@ -1185,6 +1302,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'postal_code': '00-000',
                                                      'street': 'Street', 'building_number': 1, 'name': tuple()},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Name error')
@@ -1194,6 +1312,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'postal_code': '00-000',
                                                      'street': 'Street', 'building_number': 1, 'name': dict()},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Name error')
@@ -1203,6 +1322,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'postal_code': '00-000',
                                                      'street': 'Street', 'building_number': 1, 'name': set()},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Name error')
@@ -1213,6 +1333,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'postal_code': '00-000',
                                                      'street': 'Street', 'building_number': 1, 'name': ''},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Name error')
@@ -1222,6 +1343,7 @@ class AddCustomerTestCase(APITestCase):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'postal_code': '00-000',
                                                      'street': 'Street', 'building_number': 1, 'name': ' '},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Name error')
@@ -1231,6 +1353,7 @@ class AddCustomerTestCase(APITestCase):
     def test_add_customer_with_missing_address_arguments(self):
         request = self.factory.post('add_customer', {'city': 'City', 'postal_code': '00-000', 'street': 'Street',
                                                      'building_number': 1, 'name': 'Customer name'}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'missing 1 required positional argument: \'country\'')
@@ -1239,6 +1362,7 @@ class AddCustomerTestCase(APITestCase):
 
         request = self.factory.post('add_customer', {'country': 'Country', 'postal_code': '00-000', 'street': 'Street',
                                                      'building_number': 1, 'name': 'Customer name'}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'missing 1 required positional argument: \'city\'')
@@ -1247,6 +1371,7 @@ class AddCustomerTestCase(APITestCase):
 
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'street': 'Street',
                                                      'building_number': 1, 'name': 'Customer'}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'missing 1 required positional argument: \'postal_code\'')
@@ -1255,6 +1380,7 @@ class AddCustomerTestCase(APITestCase):
 
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'postal_code': '00-000',
                                                      'building_number': 1, 'name': 'Customer'}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'missing 1 required positional argument: \'street\'')
@@ -1263,6 +1389,7 @@ class AddCustomerTestCase(APITestCase):
 
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'postal_code': '00-000',
                                                      'street': 'Street', 'name': 'Customer'}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'missing 1 required positional argument: \'building_number\'')
@@ -1272,6 +1399,7 @@ class AddCustomerTestCase(APITestCase):
     def test_add_customer_without_name_argument(self):
         request = self.factory.post('add_customer', {'country': 'Country', 'city': 'City', 'postal_code': '00-000',
                                                      'street': 'Street', 'building_number': 1}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'missing 1 required positional argument: \'name\'')

@@ -1,4 +1,5 @@
 from rest_framework.test import APITestCase, APIRequestFactory
+from django.contrib.auth.models import User
 from ...views import (CreateInvoice, Invoice, Receipt, Transaction, Company, Customer, Marketplace, SoldItem, Item, Tax,
                       Address)
 
@@ -7,6 +8,8 @@ class CreateInvoiceTestCase(APITestCase):
     def setUp(self):
         self.factory = APIRequestFactory()
         self.view = CreateInvoice.as_view()
+        self.user = User(username='test', password='test')
+        self.user.save()
         address = Address.create(country='Country', city='City', postal_code='11-222', street='Street',
                                  building_number=1)
         self.company = Company.create(name='Company', address=address)
@@ -30,6 +33,7 @@ class CreateInvoiceTestCase(APITestCase):
 
     def test_create_invoice(self):
         request = self.factory.post('create_invoice', {'receipt_id': self.receipt.receipt_id}, format='json')
+        request.user = self.user
         response = self.view(request)
         invoice = Invoice.objects.get(pk=1)
         self.assertEqual(Invoice.objects.count(), 1)
@@ -42,6 +46,7 @@ class CreateInvoiceTestCase(APITestCase):
 
     def test_create_second_invoice_with_same_number(self):
         request = self.factory.post('create_invoice', {'receipt_id': self.receipt.receipt_id}, format='json')
+        request.user = self.user
         response = self.view(request)
         invoice = Invoice.objects.get(pk=1)
         self.assertEqual(Invoice.objects.count(), 1)
@@ -53,6 +58,7 @@ class CreateInvoiceTestCase(APITestCase):
         self.assertFalse(response.data['invoice']['ended'])
 
         request = self.factory.post('create_invoice', {'receipt_id': self.receipt.receipt_id}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Invoice.objects.count(), 1)
         self.assertEqual(response.data['status'], 'ERROR')
@@ -61,6 +67,7 @@ class CreateInvoiceTestCase(APITestCase):
     def test_create_invoice_with_ended_parameter(self):
         request = self.factory.post('create_invoice', {'receipt_id': self.receipt.receipt_id, 'ended': True},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         invoice = Invoice.objects.get(pk=1)
         self.assertEqual(Invoice.objects.count(), 1)
@@ -74,6 +81,7 @@ class CreateInvoiceTestCase(APITestCase):
         invoice.delete()
         request = self.factory.post('create_invoice', {'receipt_id': self.receipt.receipt_id, 'ended': False},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         invoice = Invoice.objects.get(pk=2)
         self.assertEqual(Invoice.objects.count(), 1)
@@ -86,60 +94,70 @@ class CreateInvoiceTestCase(APITestCase):
 
     def test_create_invoice_with_not_string_as_receipt_it(self):
         request = self.factory.post('create_invoice', {'receipt_id': 1}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Invoice.objects.count(), 0)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Receipt with provided receipt_id does not exist')
 
         request = self.factory.post('create_invoice', {'receipt_id': 0}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Invoice.objects.count(), 0)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Receipt with provided receipt_id does not exist')
 
         request = self.factory.post('create_invoice', {'receipt_id': -1}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Invoice.objects.count(), 0)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Receipt with provided receipt_id does not exist')
 
         request = self.factory.post('create_invoice', {'receipt_id': 1.1}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Invoice.objects.count(), 0)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Receipt with provided receipt_id does not exist')
 
         request = self.factory.post('create_invoice', {'receipt_id': -1.1}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Invoice.objects.count(), 0)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Receipt with provided receipt_id does not exist')
 
         request = self.factory.post('create_invoice', {'receipt_id': None}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Invoice.objects.count(), 0)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Receipt with provided receipt_id does not exist')
 
         request = self.factory.post('create_invoice', {'receipt_id': list()}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Invoice.objects.count(), 0)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Receipt with provided receipt_id does not exist')
 
         request = self.factory.post('create_invoice', {'receipt_id': tuple()}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Invoice.objects.count(), 0)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Receipt with provided receipt_id does not exist')
 
         request = self.factory.post('create_invoice', {'receipt_id': dict()}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Invoice.objects.count(), 0)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Receipt with provided receipt_id does not exist')
 
         request = self.factory.post('create_invoice', {'receipt_id': set()}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Invoice.objects.count(), 0)
         self.assertEqual(response.data['status'], 'ERROR')
@@ -147,12 +165,14 @@ class CreateInvoiceTestCase(APITestCase):
 
     def test_create_invoice_with_empty_string_as_receipt_id(self):
         request = self.factory.post('create_invoice', {'receipt_id': ''}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Invoice.objects.count(), 0)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Receipt with provided receipt_id does not exist')
 
         request = self.factory.post('create_invoice', {'receipt_id': ' '}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Invoice.objects.count(), 0)
         self.assertEqual(response.data['status'], 'ERROR')
@@ -160,6 +180,7 @@ class CreateInvoiceTestCase(APITestCase):
 
     def test_create_invoice_with_too_long_string_as_receipt_id(self):
         request = self.factory.post('create_invoice', {'receipt_id': '1' * 21}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Invoice.objects.count(), 0)
         self.assertEqual(response.data['status'], 'ERROR')
@@ -167,6 +188,7 @@ class CreateInvoiceTestCase(APITestCase):
 
     def test_create_invoice_without_receipt_id_argument(self):
         request = self.factory.post('create_invoice', {}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(Invoice.objects.count(), 0)
         self.assertEqual(response.data['status'], 'ERROR')
@@ -175,6 +197,7 @@ class CreateInvoiceTestCase(APITestCase):
     def test_create_invoice_with_not_bool_as_ended(self):
         request = self.factory.post('create_invoice', {'receipt_id': self.receipt.receipt_id, 'ended': ''},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         invoice = Invoice.objects.get(pk=1)
         self.assertEqual(Invoice.objects.count(), 1)
@@ -188,6 +211,7 @@ class CreateInvoiceTestCase(APITestCase):
         invoice.delete()
         request = self.factory.post('create_invoice', {'receipt_id': self.receipt.receipt_id, 'ended': ' '},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         invoice = Invoice.objects.get(pk=2)
         self.assertEqual(Invoice.objects.count(), 1)
@@ -201,6 +225,7 @@ class CreateInvoiceTestCase(APITestCase):
         invoice.delete()
         request = self.factory.post('create_invoice', {'receipt_id': self.receipt.receipt_id, 'ended': '1'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         invoice = Invoice.objects.get(pk=3)
         self.assertEqual(Invoice.objects.count(), 1)
@@ -214,6 +239,7 @@ class CreateInvoiceTestCase(APITestCase):
         invoice.delete()
         request = self.factory.post('create_invoice', {'receipt_id': self.receipt.receipt_id, 'ended': '0'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         invoice = Invoice.objects.get(pk=4)
         self.assertEqual(Invoice.objects.count(), 1)
@@ -227,6 +253,7 @@ class CreateInvoiceTestCase(APITestCase):
         invoice.delete()
         request = self.factory.post('create_invoice', {'receipt_id': self.receipt.receipt_id, 'ended': '-1'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         invoice = Invoice.objects.get(pk=5)
         self.assertEqual(Invoice.objects.count(), 1)
@@ -240,6 +267,7 @@ class CreateInvoiceTestCase(APITestCase):
         invoice.delete()
         request = self.factory.post('create_invoice', {'receipt_id': self.receipt.receipt_id, 'ended': '1.1'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         invoice = Invoice.objects.get(pk=6)
         self.assertEqual(Invoice.objects.count(), 1)
@@ -253,6 +281,7 @@ class CreateInvoiceTestCase(APITestCase):
         invoice.delete()
         request = self.factory.post('create_invoice', {'receipt_id': self.receipt.receipt_id, 'ended': '-1.1'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         invoice = Invoice.objects.get(pk=7)
         self.assertEqual(Invoice.objects.count(), 1)
@@ -266,6 +295,7 @@ class CreateInvoiceTestCase(APITestCase):
         invoice.delete()
         request = self.factory.post('create_invoice', {'receipt_id': self.receipt.receipt_id, 'ended': 'Text'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         invoice = Invoice.objects.get(pk=8)
         self.assertEqual(Invoice.objects.count(), 1)
@@ -279,6 +309,7 @@ class CreateInvoiceTestCase(APITestCase):
         invoice.delete()
         request = self.factory.post('create_invoice', {'receipt_id': self.receipt.receipt_id, 'ended': 1},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         invoice = Invoice.objects.get(pk=9)
         self.assertEqual(Invoice.objects.count(), 1)
@@ -292,6 +323,7 @@ class CreateInvoiceTestCase(APITestCase):
         invoice.delete()
         request = self.factory.post('create_invoice', {'receipt_id': self.receipt.receipt_id, 'ended': 0},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         invoice = Invoice.objects.get(pk=10)
         self.assertEqual(Invoice.objects.count(), 1)
@@ -305,6 +337,7 @@ class CreateInvoiceTestCase(APITestCase):
         invoice.delete()
         request = self.factory.post('create_invoice', {'receipt_id': self.receipt.receipt_id, 'ended': -1},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         invoice = Invoice.objects.get(pk=11)
         self.assertEqual(Invoice.objects.count(), 1)
@@ -318,6 +351,7 @@ class CreateInvoiceTestCase(APITestCase):
         invoice.delete()
         request = self.factory.post('create_invoice', {'receipt_id': self.receipt.receipt_id, 'ended': 1.1},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         invoice = Invoice.objects.get(pk=12)
         self.assertEqual(Invoice.objects.count(), 1)
@@ -331,6 +365,7 @@ class CreateInvoiceTestCase(APITestCase):
         invoice.delete()
         request = self.factory.post('create_invoice', {'receipt_id': self.receipt.receipt_id, 'ended': -1.1},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         invoice = Invoice.objects.get(pk=13)
         self.assertEqual(Invoice.objects.count(), 1)
@@ -344,6 +379,7 @@ class CreateInvoiceTestCase(APITestCase):
         invoice.delete()
         request = self.factory.post('create_invoice', {'receipt_id': self.receipt.receipt_id, 'ended': None},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         invoice = Invoice.objects.get(pk=14)
         self.assertEqual(Invoice.objects.count(), 1)
@@ -357,6 +393,7 @@ class CreateInvoiceTestCase(APITestCase):
         invoice.delete()
         request = self.factory.post('create_invoice', {'receipt_id': self.receipt.receipt_id, 'ended': list()},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         invoice = Invoice.objects.get(pk=15)
         self.assertEqual(Invoice.objects.count(), 1)
@@ -370,6 +407,7 @@ class CreateInvoiceTestCase(APITestCase):
         invoice.delete()
         request = self.factory.post('create_invoice', {'receipt_id': self.receipt.receipt_id, 'ended': tuple()},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         invoice = Invoice.objects.get(pk=16)
         self.assertEqual(Invoice.objects.count(), 1)
@@ -383,6 +421,7 @@ class CreateInvoiceTestCase(APITestCase):
         invoice.delete()
         request = self.factory.post('create_invoice', {'receipt_id': self.receipt.receipt_id, 'ended': dict()},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         invoice = Invoice.objects.get(pk=17)
         self.assertEqual(Invoice.objects.count(), 1)
@@ -396,6 +435,7 @@ class CreateInvoiceTestCase(APITestCase):
         invoice.delete()
         request = self.factory.post('create_invoice', {'receipt_id': self.receipt.receipt_id, 'ended': set()},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         invoice = Invoice.objects.get(pk=18)
         self.assertEqual(Invoice.objects.count(), 1)

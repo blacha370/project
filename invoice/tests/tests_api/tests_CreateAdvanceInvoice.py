@@ -1,4 +1,5 @@
 from rest_framework.test import APITestCase, APIRequestFactory
+from django.contrib.auth.models import User
 from ...views import (CreateAdvanceInvoice, AdvanceInvoice, Invoice, Receipt, Transaction, Company, Customer, Marketplace,
                       SoldItem, Item, Tax, Address)
 
@@ -7,6 +8,8 @@ class CreateAdvanceInvoiceTestCase(APITestCase):
     def setUp(self):
         self.factory = APIRequestFactory()
         self.view = CreateAdvanceInvoice.as_view()
+        self.user = User(username='test', password='test')
+        self.user.save()
         address = Address.create(country='Country', city='City', postal_code='11-222', street='Street',
                                  building_number=1)
         self.company = Company.create(name='Company', address=address)
@@ -32,6 +35,7 @@ class CreateAdvanceInvoiceTestCase(APITestCase):
     def test_create_advance_invoice(self):
         request = self.factory.post('create_advance_invoice', {'invoice_id': self.invoice.invoice_id,
                                                                'payment': 100.02}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(AdvanceInvoice.objects.count(), 1)
         self.assertEqual(response.data['status'], 'OK')
@@ -40,6 +44,7 @@ class CreateAdvanceInvoiceTestCase(APITestCase):
     def test_create_invoice_until_ended(self):
         request = self.factory.post('create_advance_invoice', {'invoice_id': self.invoice.invoice_id,
                                                                'payment': 100.02}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(AdvanceInvoice.objects.count(), 1)
         self.assertEqual(response.data['status'], 'OK')
@@ -47,6 +52,7 @@ class CreateAdvanceInvoiceTestCase(APITestCase):
 
         request = self.factory.post('create_advance_invoice', {'invoice_id': self.invoice.invoice_id,
                                                                'payment': 438}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(AdvanceInvoice.objects.count(), 2)
         self.assertEqual(response.data['status'], 'OK')
@@ -56,6 +62,7 @@ class CreateAdvanceInvoiceTestCase(APITestCase):
     def test_create_invoice_with_value_above_transaction_total_value(self):
         request = self.factory.post('create_advance_invoice', {'invoice_id': self.invoice.invoice_id,
                                                                'payment': 1000}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(AdvanceInvoice.objects.count(), 0)
         self.assertEqual(response.data['status'], 'ERROR')
@@ -64,72 +71,84 @@ class CreateAdvanceInvoiceTestCase(APITestCase):
 
     def test_create_advance_invoice_with_not_string_as_invoice_id(self):
         request = self.factory.post('create_advance_invoice', {'invoice_id': 1, 'payment': 1000}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(AdvanceInvoice.objects.count(), 0)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Invoice with provided invoice_id does not exist')
 
         request = self.factory.post('create_advance_invoice', {'invoice_id': 0, 'payment': 1000}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(AdvanceInvoice.objects.count(), 0)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Invoice with provided invoice_id does not exist')
 
         request = self.factory.post('create_advance_invoice', {'invoice_id': -1, 'payment': 1000}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(AdvanceInvoice.objects.count(), 0)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Invoice with provided invoice_id does not exist')
 
         request = self.factory.post('create_advance_invoice', {'invoice_id': 1.1, 'payment': 1000}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(AdvanceInvoice.objects.count(), 0)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Invoice with provided invoice_id does not exist')
 
         request = self.factory.post('create_advance_invoice', {'invoice_id': -1.1, 'payment': 1000}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(AdvanceInvoice.objects.count(), 0)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Invoice with provided invoice_id does not exist')
 
         request = self.factory.post('create_advance_invoice', {'invoice_id': True, 'payment': 1000}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(AdvanceInvoice.objects.count(), 0)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Invoice with provided invoice_id does not exist')
 
         request = self.factory.post('create_advance_invoice', {'invoice_id': False, 'payment': 1000}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(AdvanceInvoice.objects.count(), 0)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Invoice with provided invoice_id does not exist')
 
         request = self.factory.post('create_advance_invoice', {'invoice_id': None, 'payment': 1000}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(AdvanceInvoice.objects.count(), 0)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Invoice with provided invoice_id does not exist')
 
         request = self.factory.post('create_advance_invoice', {'invoice_id': list(), 'payment': 1000}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(AdvanceInvoice.objects.count(), 0)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Invoice with provided invoice_id does not exist')
 
         request = self.factory.post('create_advance_invoice', {'invoice_id': tuple(), 'payment': 1000}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(AdvanceInvoice.objects.count(), 0)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Invoice with provided invoice_id does not exist')
 
         request = self.factory.post('create_advance_invoice', {'invoice_id': dict(), 'payment': 1000}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(AdvanceInvoice.objects.count(), 0)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Invoice with provided invoice_id does not exist')
 
         request = self.factory.post('create_advance_invoice', {'invoice_id': set(), 'payment': 1000}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(AdvanceInvoice.objects.count(), 0)
         self.assertEqual(response.data['status'], 'ERROR')
@@ -137,12 +156,14 @@ class CreateAdvanceInvoiceTestCase(APITestCase):
 
     def test_create_advance_invoice_with_empty_string_as_invoice_id(self):
         request = self.factory.post('create_advance_invoice', {'invoice_id': '', 'payment': 1000}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(AdvanceInvoice.objects.count(), 0)
         self.assertEqual(response.data['status'], 'ERROR')
         self.assertEqual(response.data['message'], 'Invoice with provided invoice_id does not exist')
 
         request = self.factory.post('create_advance_invoice', {'invoice_id': ' ', 'payment': 1000}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(AdvanceInvoice.objects.count(), 0)
         self.assertEqual(response.data['status'], 'ERROR')
@@ -151,6 +172,7 @@ class CreateAdvanceInvoiceTestCase(APITestCase):
     def test_create_advance_invoice_with_wrong_invoice_id(self):
         request = self.factory.post('create_advance_invoice', {'invoice_id': 'wrong_id', 'payment': 1000},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(AdvanceInvoice.objects.count(), 0)
         self.assertEqual(response.data['status'], 'ERROR')
@@ -158,6 +180,7 @@ class CreateAdvanceInvoiceTestCase(APITestCase):
 
     def test_crate_advance_invoice_without_invoice_id(self):
         request = self.factory.post('create_advance_invoice', {'payment': 1000}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(AdvanceInvoice.objects.count(), 0)
         self.assertEqual(response.data['status'], 'ERROR')
@@ -166,6 +189,7 @@ class CreateAdvanceInvoiceTestCase(APITestCase):
     def test_create_advance_invoice_with_not_int_or_float_as_payment(self):
         request = self.factory.post('create_advance_invoice', {'invoice_id': self.invoice.invoice_id, 'payment': ''},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(AdvanceInvoice.objects.count(), 0)
         self.assertEqual(response.data['status'], 'ERROR')
@@ -173,6 +197,7 @@ class CreateAdvanceInvoiceTestCase(APITestCase):
 
         request = self.factory.post('create_advance_invoice', {'invoice_id': self.invoice.invoice_id, 'payment': ' '},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(AdvanceInvoice.objects.count(), 0)
         self.assertEqual(response.data['status'], 'ERROR')
@@ -180,6 +205,7 @@ class CreateAdvanceInvoiceTestCase(APITestCase):
 
         request = self.factory.post('create_advance_invoice', {'invoice_id': self.invoice.invoice_id, 'payment': '1'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(AdvanceInvoice.objects.count(), 0)
         self.assertEqual(response.data['status'], 'ERROR')
@@ -187,6 +213,7 @@ class CreateAdvanceInvoiceTestCase(APITestCase):
 
         request = self.factory.post('create_advance_invoice', {'invoice_id': self.invoice.invoice_id, 'payment': '0'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(AdvanceInvoice.objects.count(), 0)
         self.assertEqual(response.data['status'], 'ERROR')
@@ -194,6 +221,7 @@ class CreateAdvanceInvoiceTestCase(APITestCase):
 
         request = self.factory.post('create_advance_invoice', {'invoice_id': self.invoice.invoice_id, 'payment': '-1'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(AdvanceInvoice.objects.count(), 0)
         self.assertEqual(response.data['status'], 'ERROR')
@@ -201,6 +229,7 @@ class CreateAdvanceInvoiceTestCase(APITestCase):
 
         request = self.factory.post('create_advance_invoice', {'invoice_id': self.invoice.invoice_id, 'payment': '1.1'},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(AdvanceInvoice.objects.count(), 0)
         self.assertEqual(response.data['status'], 'ERROR')
@@ -208,6 +237,7 @@ class CreateAdvanceInvoiceTestCase(APITestCase):
 
         request = self.factory.post('create_advance_invoice', {'invoice_id': self.invoice.invoice_id,
                                                                'payment': '-1.1'}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(AdvanceInvoice.objects.count(), 0)
         self.assertEqual(response.data['status'], 'ERROR')
@@ -215,6 +245,7 @@ class CreateAdvanceInvoiceTestCase(APITestCase):
 
         request = self.factory.post('create_advance_invoice', {'invoice_id': self.invoice.invoice_id,
                                                                'payment': 'Text'}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(AdvanceInvoice.objects.count(), 0)
         self.assertEqual(response.data['status'], 'ERROR')
@@ -222,6 +253,7 @@ class CreateAdvanceInvoiceTestCase(APITestCase):
 
         request = self.factory.post('create_advance_invoice', {'invoice_id': self.invoice.invoice_id, 'payment': 0},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(AdvanceInvoice.objects.count(), 0)
         self.assertEqual(response.data['status'], 'ERROR')
@@ -229,6 +261,7 @@ class CreateAdvanceInvoiceTestCase(APITestCase):
 
         request = self.factory.post('create_advance_invoice', {'invoice_id': self.invoice.invoice_id, 'payment': True},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(AdvanceInvoice.objects.count(), 0)
         self.assertEqual(response.data['status'], 'ERROR')
@@ -236,6 +269,7 @@ class CreateAdvanceInvoiceTestCase(APITestCase):
 
         request = self.factory.post('create_advance_invoice', {'invoice_id': self.invoice.invoice_id, 'payment': False},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(AdvanceInvoice.objects.count(), 0)
         self.assertEqual(response.data['status'], 'ERROR')
@@ -243,6 +277,7 @@ class CreateAdvanceInvoiceTestCase(APITestCase):
 
         request = self.factory.post('create_advance_invoice', {'invoice_id': self.invoice.invoice_id, 'payment': None},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(AdvanceInvoice.objects.count(), 0)
         self.assertEqual(response.data['status'], 'ERROR')
@@ -250,6 +285,7 @@ class CreateAdvanceInvoiceTestCase(APITestCase):
 
         request = self.factory.post('create_advance_invoice', {'invoice_id': self.invoice.invoice_id,
                                                                'payment': list()}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(AdvanceInvoice.objects.count(), 0)
         self.assertEqual(response.data['status'], 'ERROR')
@@ -257,6 +293,7 @@ class CreateAdvanceInvoiceTestCase(APITestCase):
 
         request = self.factory.post('create_advance_invoice', {'invoice_id': self.invoice.invoice_id,
                                                                'payment': tuple()}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(AdvanceInvoice.objects.count(), 0)
         self.assertEqual(response.data['status'], 'ERROR')
@@ -264,6 +301,7 @@ class CreateAdvanceInvoiceTestCase(APITestCase):
 
         request = self.factory.post('create_advance_invoice', {'invoice_id': self.invoice.invoice_id,
                                                                'payment': dict()}, format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(AdvanceInvoice.objects.count(), 0)
         self.assertEqual(response.data['status'], 'ERROR')
@@ -271,6 +309,7 @@ class CreateAdvanceInvoiceTestCase(APITestCase):
 
         request = self.factory.post('create_advance_invoice', {'invoice_id': self.invoice.invoice_id, 'payment': set()},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(AdvanceInvoice.objects.count(), 0)
         self.assertEqual(response.data['status'], 'ERROR')
@@ -279,6 +318,7 @@ class CreateAdvanceInvoiceTestCase(APITestCase):
     def test_create_advance_invoice_with_negative_or_0_as_payment(self):
         request = self.factory.post('create_advance_invoice', {'invoice_id': self.invoice.invoice_id, 'payment': 0},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(AdvanceInvoice.objects.count(), 0)
         self.assertEqual(response.data['status'], 'ERROR')
@@ -286,6 +326,7 @@ class CreateAdvanceInvoiceTestCase(APITestCase):
 
         request = self.factory.post('create_advance_invoice', {'invoice_id': self.invoice.invoice_id, 'payment': -1},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(AdvanceInvoice.objects.count(), 0)
         self.assertEqual(response.data['status'], 'ERROR')
@@ -293,6 +334,7 @@ class CreateAdvanceInvoiceTestCase(APITestCase):
 
         request = self.factory.post('create_advance_invoice', {'invoice_id': self.invoice.invoice_id, 'payment': -1.1},
                                     format='json')
+        request.user = self.user
         response = self.view(request)
         self.assertEqual(AdvanceInvoice.objects.count(), 0)
         self.assertEqual(response.data['status'], 'ERROR')
