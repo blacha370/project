@@ -244,7 +244,7 @@ class CreateAdvanceInvoice(APIView):
     def post(self, request):
         try:
             invoice = Invoice.objects.get(invoice_id=request.data['invoice_id'])
-            advance_invoice = AdvanceInvoice.create(invoice, request.data['payment'])
+            advance_invoice = AdvanceInvoice.create(invoice, request.data['payment'], user=request.user)
             serializer = AdvanceInvoiceSerializer(advance_invoice, many=False, context={'request': request})
             return Response({'status': 'OK', 'advance_invoice': serializer.data})
         except Invoice.DoesNotExist:
