@@ -468,8 +468,8 @@ class AdvanceInvoice(models.Model):
         return advance_invoice_id
 
     @classmethod
-    def create(cls, invoice: Invoice, payment: (int, float)):
-        cls._validate_data(invoice=invoice, payment=payment)
+    def create(cls, invoice: Invoice, payment: (int, float), user: User):
+        cls._validate_data(invoice=invoice, payment=payment, user=user)
         advance_invoice_id = cls._generate_invoice_id(invoice.invoice_id)
         instance = cls(invoice=invoice, _payment=payment, advance_invoice_id=advance_invoice_id)
         instance.save()
